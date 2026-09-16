@@ -1,0 +1,24 @@
+# Internal-only: build this branch for every platform on demand and upload the
+# bundles as run artifacts. Not part of the upstream proposal — it exists so a
+# fork can produce macOS and Linux builds without a Mac.
+name: Manual build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build (branch, tag or SHA)."
+        required: true
+        default: "feat/team-share"
+        type: string
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      ref: ${{ inputs.ref }}
+      # Upload to the run instead of creating a release.
+      preview: true

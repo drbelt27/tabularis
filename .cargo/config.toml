@@ -1,0 +1,6 @@
+# Internal-only: marks the build as managed outside the app, so the updater
+# never offers the official release in place of this build. Same mechanism the
+# project already uses for snap, flatpak and AUR packages.
+[env]
+PACKAGE_MANAGER_SRC = "internal"
+PACKAGE_MANAGER_NAME = "softCodex internal build"
