@@ -76,6 +76,7 @@ fn entry(id: &str, host: &str, password: Option<&str>, updated_at: &str) -> Vaul
         tag_ids: None,
         environment: None,
         detect_json_in_text_columns: None,
+        appearance: None,
         updated_at: updated_at.to_string(),
         updated_by: "alice@box".to_string(),
         deleted: false,
@@ -583,6 +584,93 @@ mod locking {
 
         let lock = vault::VaultLock::acquire(&path).expect("a stale lock must not block the team");
         drop(lock);
+    }
+}
+
+mod appearance {
+    use super::*;
+    use crate::models::{ConnectionAppearance, IconOverride};
+
+    fn look(icon: Option<IconOverride>, color: Option<&str>) -> ConnectionAppearance {
+        ConnectionAppearance {
+            icon,
+            accent_color: color.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn a_colour_and_an_emoji_are_shareable() {
+        let local = look(
+            Some(IconOverride::Emoji {
+                value: "🐘".to_string(),
+            }),
+            Some("#f97316"),
+        );
+        assert_eq!(vault::strip_local_appearance(Some(&local)), Some(local));
+    }
+
+    #[test]
+    fn an_uploaded_image_does_not_travel_but_its_colour_does() {
+        // The path points into this machine's data directory; a teammate
+        // would resolve it to nothing.
+        let local = look(
+            Some(IconOverride::Image {
+                path: "connection-icons/abc.png".to_string(),
+            }),
+            Some("#f97316"),
+        );
+        let shared = vault::strip_local_appearance(Some(&local)).unwrap();
+        assert!(shared.icon.is_none());
+        assert_eq!(shared.accent_color.as_deref(), Some("#f97316"));
+    }
+
+    #[test]
+    fn an_image_with_nothing_else_leaves_nothing_to_share() {
+        let local = look(
+            Some(IconOverride::Image {
+                path: "connection-icons/abc.png".to_string(),
+            }),
+            None,
+        );
+        assert_eq!(vault::strip_local_appearance(Some(&local)), None);
+        assert_eq!(vault::strip_local_appearance(None), None);
+    }
+
+    #[test]
+    fn the_teams_look_wins_over_the_members_one() {
+        let shared = look(
+            Some(IconOverride::Pack {
+                id: "postgres".to_string(),
+            }),
+            Some("#2563eb"),
+        );
+        let local = look(None, Some("#dc2626"));
+        let merged = vault::merge_appearance(Some(&shared), Some(&local)).unwrap();
+        assert_eq!(merged, shared);
+    }
+
+    #[test]
+    fn a_members_uploaded_image_survives_a_team_without_an_icon() {
+        // The share cannot carry an image, so overwriting one with nothing
+        // would silently undo a choice the member cannot get back.
+        let image = IconOverride::Image {
+            path: "connection-icons/abc.png".to_string(),
+        };
+        let shared = look(None, Some("#2563eb"));
+        let local = look(Some(image.clone()), None);
+
+        let merged = vault::merge_appearance(Some(&shared), Some(&local)).unwrap();
+        assert_eq!(merged.icon, Some(image.clone()));
+        assert_eq!(merged.accent_color.as_deref(), Some("#2563eb"));
+
+        // And with no team appearance at all it is still kept.
+        let merged = vault::merge_appearance(None, Some(&local)).unwrap();
+        assert_eq!(merged.icon, Some(image));
+    }
+
+    #[test]
+    fn nothing_anywhere_stays_nothing() {
+        assert_eq!(vault::merge_appearance(None, None), None);
     }
 }
 

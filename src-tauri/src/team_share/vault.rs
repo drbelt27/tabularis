@@ -25,7 +25,8 @@ use zeroize::Zeroizing;
 
 use crate::export_crypto::{self, Sealed};
 use crate::models::{
-    ConnectionGroup, ConnectionParams, ConnectionTag, K8sConnection, SshConnection,
+    ConnectionAppearance, ConnectionGroup, ConnectionParams, ConnectionTag, IconOverride,
+    K8sConnection, SshConnection,
 };
 
 /// Marker written into every vault file.
@@ -127,6 +128,15 @@ pub struct VaultEntry {
     pub environment: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detect_json_in_text_columns: Option<bool>,
+    /// Accent colour and icon, so a connection looks the same for everyone.
+    ///
+    /// Only the portable forms travel: a colour, an icon-pack id or an emoji
+    /// are plain strings. An uploaded image lives as a file under
+    /// `<app_data>/connection-icons/`, and its path means nothing on a
+    /// teammate's machine, so [`strip_local_appearance`] drops it rather than
+    /// carrying a reference that cannot resolve.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub appearance: Option<ConnectionAppearance>,
     pub updated_at: String,
     #[serde(default)]
     pub updated_by: String,
@@ -190,6 +200,56 @@ pub struct VaultK8sProfile {
     pub updated_by: String,
     #[serde(default)]
     pub deleted: bool,
+}
+
+/// The shareable part of a connection's appearance.
+///
+/// An uploaded image is a path into this machine's own data directory, so it
+/// is dropped: a teammate would resolve it to nothing. The accent colour
+/// survives on its own, so a connection that had both keeps its colour.
+/// Returns `None` when nothing portable is left.
+pub fn strip_local_appearance(
+    appearance: Option<&ConnectionAppearance>,
+) -> Option<ConnectionAppearance> {
+    let appearance = appearance?;
+    let icon = match &appearance.icon {
+        Some(IconOverride::Image { .. }) | None => None,
+        Some(portable) => Some(portable.clone()),
+    };
+    if icon.is_none() && appearance.accent_color.is_none() {
+        return None;
+    }
+    Some(ConnectionAppearance {
+        icon,
+        accent_color: appearance.accent_color.clone(),
+    })
+}
+
+/// Appearance to store locally for a shared connection.
+///
+/// The team's look wins, so a connection is recognisable to everyone. The one
+/// thing kept from the member is an uploaded image icon, and only while the
+/// team brings no icon of its own: the share never carries images (see
+/// [`strip_local_appearance`]), so overwriting one with nothing would silently
+/// undo a choice the member made and cannot get back.
+pub fn merge_appearance(
+    shared: Option<&ConnectionAppearance>,
+    local: Option<&ConnectionAppearance>,
+) -> Option<ConnectionAppearance> {
+    let local_image = local.and_then(|a| match &a.icon {
+        Some(IconOverride::Image { .. }) => a.icon.clone(),
+        _ => None,
+    });
+    match shared {
+        Some(shared) => Some(ConnectionAppearance {
+            icon: shared.icon.clone().or(local_image),
+            accent_color: shared.accent_color.clone(),
+        }),
+        None => local_image.map(|icon| ConnectionAppearance {
+            icon: Some(icon),
+            accent_color: None,
+        }),
+    }
 }
 
 fn base64_encode(bytes: &[u8]) -> String {

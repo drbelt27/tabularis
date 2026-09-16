@@ -318,6 +318,7 @@ fn local_payload<R: Runtime>(app: &AppHandle<R>, session: &Session) -> Result<Va
             tag_ids: connection.tag_ids.clone(),
             environment: connection.environment.clone(),
             detect_json_in_text_columns: connection.detect_json_in_text_columns,
+            appearance: vault::strip_local_appearance(connection.appearance.as_ref()),
             // Stamps are rewritten by the merge whenever the content actually
             // differs, so carrying the previous ones over keeps an untouched
             // record byte-identical to its base.
@@ -331,15 +332,16 @@ fn local_payload<R: Runtime>(app: &AppHandle<R>, session: &Session) -> Result<Va
         });
     }
 
+    // A group is on the share exactly while it holds a shared connection,
+    // directly or through a descendant — the ancestor chain comes along so the
+    // hierarchy is not orphaned. A group that loses its last shared connection
+    // drops out here and is tombstoned by the merge, so the team does not
+    // accumulate empty folders.
     let shared_group_ids: Vec<&str> = entries
         .iter()
         .filter_map(|e| e.group_id.as_deref())
         .collect();
-    let mut wanted_groups = crate::models::collect_group_ancestors(&file.groups, shared_group_ids);
-    // A group already on the share stays on it while it still exists locally,
-    // so unsharing the last connection of a group does not delete that group
-    // for the whole team.
-    wanted_groups.extend(session.base.groups.iter().map(|g| g.group.id.clone()));
+    let wanted_groups = crate::models::collect_group_ancestors(&file.groups, shared_group_ids);
 
     let groups = file
         .groups
@@ -354,12 +356,12 @@ fn local_payload<R: Runtime>(app: &AppHandle<R>, session: &Session) -> Result<Va
         })
         .collect();
 
-    let mut wanted_tags: HashSet<String> = entries
+    // Same rule for tags: only the ones a shared connection actually wears.
+    let wanted_tags: HashSet<String> = entries
         .iter()
         .flat_map(|e| e.tag_ids.iter().flatten())
         .cloned()
         .collect();
-    wanted_tags.extend(session.base.tags.iter().map(|t| t.tag.id.clone()));
 
     let tags = file
         .tags
@@ -497,9 +499,13 @@ fn materialize<R: Runtime>(
             name: entry.name.clone(),
             params,
             group_id: entry.group_id.clone(),
+            // Ordering stays a per-member preference; the look does not.
             sort_order: existing.and_then(|c| c.sort_order),
             detect_json_in_text_columns: entry.detect_json_in_text_columns,
-            appearance: existing.and_then(|c| c.appearance.clone()),
+            appearance: vault::merge_appearance(
+                entry.appearance.as_ref(),
+                existing.and_then(|c| c.appearance.as_ref()),
+            ),
             tag_ids: entry.tag_ids.clone(),
             environment: entry.environment.clone(),
             shared: Some(true),
@@ -800,6 +806,36 @@ pub fn push_local_ssh_change<R: Runtime>(
     }
     if let Err(e) = sync_session(app, session) {
         log::warn!("[TeamShare] Could not push the SSH profile change to the share: {e}");
+    }
+}
+
+/// Push a change to a shared connection that left its credentials alone —
+/// appearance, tags, the group it sits in.
+///
+/// No-op when the connection is not shared or the vault is locked, so callers
+/// can fire it unconditionally after saving. Best effort like the other push:
+/// the local change is already on disk, and an unreachable share must not fail
+/// it.
+pub fn push_metadata_change<R: Runtime>(app: &AppHandle<R>, connection_id: &str) {
+    let is_shared = connections_path(app)
+        .ok()
+        .and_then(|path| persistence::load_connections_file(&path).ok())
+        .is_some_and(|file| {
+            file.connections
+                .iter()
+                .any(|c| c.id == connection_id && c.is_shared())
+        });
+    if !is_shared {
+        return;
+    }
+
+    let state = app.state::<TeamShareState>();
+    let mut guard = state.session.lock().unwrap();
+    let Some(session) = guard.as_mut() else {
+        return;
+    };
+    if let Err(e) = sync_session(app, session) {
+        log::warn!("[TeamShare] Could not push the change to the share: {e}");
     }
 }
 

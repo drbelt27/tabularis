@@ -289,7 +289,7 @@ pub struct ConnectionParams {
     pub connection_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum IconOverride {
     Pack { id: String },
@@ -297,7 +297,7 @@ pub enum IconOverride {
     Image { path: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]

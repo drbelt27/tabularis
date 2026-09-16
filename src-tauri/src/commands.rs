@@ -1445,6 +1445,9 @@ pub async fn set_connection_appearance<R: Runtime>(
     let mut conn_file = persistence::load_connections_file(&path)?;
     set_appearance_impl(&mut conn_file, &id, appearance)?;
     save_connections_and_invalidate(&app, &path, &conn_file)?;
+    // The team shares the look of a connection, so this reaches the share as
+    // soon as it is saved rather than at the next sync.
+    crate::team_share::push_metadata_change(&app, &id);
     Ok(())
 }
 
@@ -6021,6 +6024,9 @@ pub async fn move_connection_to_group<R: Runtime>(
 
     let updated = conn.clone();
     save_connections_and_invalidate(&app, &path, &file)?;
+    // Moving a shared connection can also pull its new group into the share,
+    // or leave the old one empty and drop it.
+    crate::team_share::push_metadata_change(&app, &connection_id);
 
     Ok(updated)
 }
