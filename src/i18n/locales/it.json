@@ -910,7 +910,10 @@
       "errorPasswordMismatch": "Le due master password non coincidono.",
       "errorNoFolder": "Scegli prima la cartella condivisa.",
       "membershipHint_one": "{{count}} connessione è attualmente nella share.",
-      "membershipHint_other": "{{count}} connessioni sono attualmente nella share."
+      "membershipHint_other": "{{count}} connessioni sono attualmente nella share.",
+      "conflictToastTitle": "Conflitto nella share del team",
+      "conflictToast_one": "{{count}} record è cambiato qui e sulla share dall'ultima sincronizzazione. Ha vinto la tua versione: verifica che sia ancora quella giusta, soprattutto se un collega ha ruotato una password.",
+      "conflictToast_other": "{{count}} record sono cambiati qui e sulla share dall'ultima sincronizzazione. Hanno vinto le tue versioni: verifica che siano ancora quelle giuste, soprattutto se un collega ha ruotato una password."
     },
     "backup": {
       "title": "Backup",

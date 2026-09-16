@@ -377,7 +377,7 @@ pub struct ConnectionsFile {
     pub tags: Vec<ConnectionTag>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct K8sConnection {
     pub id: String,
     pub name: String,
@@ -390,6 +390,19 @@ pub struct K8sConnection {
     pub kubectl_path: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kubeconfig_path: Option<String>,
+    /// `Some(true)` when this tunnel travels in the team share, because a
+    /// shared connection routes through it. Unlike an SSH profile it carries
+    /// no secrets, only reachability settings. Managed by
+    /// [`crate::team_share`] as a consequence of sharing a connection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shared: Option<bool>,
+}
+
+impl K8sConnection {
+    /// True when this tunnel comes from the team share.
+    pub fn is_shared(&self) -> bool {
+        self.shared.unwrap_or(false)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

@@ -18,7 +18,9 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::BTreeSet;
 
-use super::vault::{VaultEntry, VaultGroup, VaultPayload, VaultSshProfile, VaultTag};
+use super::vault::{
+    VaultEntry, VaultGroup, VaultK8sProfile, VaultPayload, VaultSshProfile, VaultTag,
+};
 
 /// Tombstones older than this are dropped, so the vault does not grow forever
 /// with records nobody remembers.
@@ -91,12 +93,21 @@ pub fn merge_payload(
         ctx,
         &mut notes,
     );
+    let k8s_profiles = merge_list(
+        "k8s tunnel",
+        &base.k8s_profiles,
+        &remote.k8s_profiles,
+        &local.k8s_profiles,
+        ctx,
+        &mut notes,
+    );
     (
         VaultPayload {
             entries,
             groups,
             tags,
             ssh_profiles,
+            k8s_profiles,
         },
         notes,
     )
@@ -178,6 +189,26 @@ impl Mergeable for VaultSshProfile {
         // A tombstone must not keep carrying the tunnel's credentials.
         self.profile.password = None;
         self.profile.key_passphrase = None;
+    }
+}
+
+impl Mergeable for VaultK8sProfile {
+    fn id(&self) -> &str {
+        &self.profile.id
+    }
+    fn updated_at(&self) -> &str {
+        &self.updated_at
+    }
+    fn is_deleted(&self) -> bool {
+        self.deleted
+    }
+    fn stamp(&mut self, now: &str, actor: &str) {
+        self.updated_at = now.to_string();
+        self.updated_by = actor.to_string();
+    }
+    fn mark_deleted(&mut self) {
+        // Nothing to scrub: a K8s tunnel carries no credentials.
+        self.deleted = true;
     }
 }
 

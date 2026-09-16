@@ -21,9 +21,12 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroizing;
 
 use crate::export_crypto::{self, Sealed};
-use crate::models::{ConnectionGroup, ConnectionParams, ConnectionTag, SshConnection};
+use crate::models::{
+    ConnectionGroup, ConnectionParams, ConnectionTag, K8sConnection, SshConnection,
+};
 
 /// Marker written into every vault file.
 pub const VAULT_FORMAT: &str = "tabularis-team-vault";
@@ -98,6 +101,10 @@ pub struct VaultPayload {
     /// have, and the tunnel could not be opened.
     #[serde(default)]
     pub ssh_profiles: Vec<VaultSshProfile>,
+    /// Kubernetes tunnels the shared connections route through, for the same
+    /// reason. These carry no credentials, only reachability settings.
+    #[serde(default)]
+    pub k8s_profiles: Vec<VaultK8sProfile>,
 }
 
 /// One shared connection, credentials included.
@@ -166,6 +173,25 @@ pub struct VaultSshProfile {
     pub deleted: bool,
 }
 
+/// A shared Kubernetes tunnel. Unlike [`VaultSshProfile`] it holds no
+/// secrets — context, namespace and resource name are plain configuration.
+///
+/// `kubectlPath` and `kubeconfigPath` are machine-local paths, so they travel
+/// verbatim and may not resolve on a teammate's machine; an environment
+/// variable in them (see [`crate::path_vars`]) is the portable way to write
+/// one.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultK8sProfile {
+    #[serde(flatten)]
+    pub profile: K8sConnection,
+    pub updated_at: String,
+    #[serde(default)]
+    pub updated_by: String,
+    #[serde(default)]
+    pub deleted: bool,
+}
+
 fn base64_encode(bytes: &[u8]) -> String {
     use base64::engine::general_purpose::STANDARD as BASE64;
     use base64::Engine;
@@ -218,9 +244,15 @@ fn current_host() -> Option<String> {
 }
 
 /// Derive the master key from `password` and the vault's own KDF parameters.
-pub fn derive_key(password: &str, kdf: &KdfParams) -> Result<[u8; 32], String> {
+///
+/// Returned wrapped so every copy of the key — including the short-lived ones
+/// made while joining or unlocking a vault — is wiped when it goes out of
+/// scope, not just the one the session holds.
+pub fn derive_key(password: &str, kdf: &KdfParams) -> Result<Zeroizing<[u8; 32]>, String> {
     let salt = base64_decode(&kdf.salt)?;
-    export_crypto::derive_key(password, &salt, kdf.m_cost, kdf.t_cost, kdf.p_cost)
+    Ok(Zeroizing::new(export_crypto::derive_key(
+        password, &salt, kdf.m_cost, kdf.t_cost, kdf.p_cost,
+    )?))
 }
 
 /// True when `key` is the key the vault was sealed with.

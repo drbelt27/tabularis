@@ -677,6 +677,13 @@ pub fn find_connection_by_id<R: Runtime>(
     // password.
     if conn.is_shared() {
         crate::team_share::attach_secrets(app, &mut conn)?;
+        // Same exception the keychain path makes below: an IAM-auth
+        // connection's password is a 15-minute RDS token, so whatever the
+        // vault happens to hold is stale by the time it is read. Drop it and
+        // let the caller supply a fresh one.
+        if conn.params.use_iam_auth.unwrap_or(false) {
+            conn.params.password = None;
+        }
         return Ok(conn);
     }
 
@@ -2118,8 +2125,26 @@ fn load_k8s_connections_sync<R: Runtime>(
     Ok(serde_json::from_str(&content).unwrap_or_default())
 }
 
+/// Load `k8s_connections.json`. Shared with [`crate::team_share`], which
+/// mirrors the team's tunnels into it.
+pub(crate) fn load_k8s_connections<R: Runtime>(
+    app: &AppHandle<R>,
+) -> Result<Vec<K8sConnection>, String> {
+    load_k8s_connections_sync(app)
+}
+
+/// Write `k8s_connections.json`.
+pub(crate) fn save_k8s_connections<R: Runtime>(
+    app: &AppHandle<R>,
+    connections: &[K8sConnection],
+) -> Result<(), String> {
+    let path = get_k8s_config_path(app)?;
+    let json = serde_json::to_string_pretty(connections).map_err(|e| e.to_string())?;
+    fs::write(&path, json).map_err(|e| e.to_string())
+}
+
 /// Get the path to the k8s_connections.json file.
-fn get_k8s_config_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
+pub(crate) fn get_k8s_config_path<R: Runtime>(app: &AppHandle<R>) -> Result<PathBuf, String> {
     let config_dir = app
         .path()
         .app_config_dir()
@@ -2169,6 +2194,9 @@ pub async fn save_k8s_connection<R: Runtime>(
         port: k8s.port,
         kubectl_path: k8s.kubectl_path,
         kubeconfig_path: k8s.kubeconfig_path,
+        // A new tunnel is local; it joins the share only when a shared
+        // connection starts routing through it.
+        shared: None,
     };
 
     connections.push(connection.clone());
@@ -2199,6 +2227,10 @@ pub async fn update_k8s_connection<R: Runtime>(
         .position(|c| c.id == id)
         .ok_or_else(|| format!("K8s connection with ID {} not found", id))?;
 
+    // A shared tunnel stays shared across an edit; the change reaches the team
+    // on the next sync.
+    let was_shared = connections[idx].is_shared();
+
     let connection = K8sConnection {
         id: id.clone(),
         name: k8s.name,
@@ -2209,6 +2241,7 @@ pub async fn update_k8s_connection<R: Runtime>(
         port: k8s.port,
         kubectl_path: k8s.kubectl_path,
         kubeconfig_path: k8s.kubeconfig_path,
+        shared: was_shared.then_some(true),
     };
 
     connections[idx] = connection.clone();

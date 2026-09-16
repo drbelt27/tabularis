@@ -928,7 +928,10 @@
       "errorPasswordMismatch": "The two master passwords do not match.",
       "errorNoFolder": "Choose the shared folder first.",
       "membershipHint_one": "{{count}} connection is currently in the share.",
-      "membershipHint_other": "{{count}} connections are currently in the share."
+      "membershipHint_other": "{{count}} connections are currently in the share.",
+      "conflictToastTitle": "Team share conflict",
+      "conflictToast_one": "{{count}} record changed here and on the share since the last sync. Your version won — check it is still the one you want, especially if a teammate rotated a password.",
+      "conflictToast_other": "{{count}} records changed here and on the share since the last sync. Your versions won — check they are still the ones you want, especially if a teammate rotated a password."
     },
     "backup": {
       "title": "Backup",

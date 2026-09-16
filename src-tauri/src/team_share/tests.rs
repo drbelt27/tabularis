@@ -2,12 +2,13 @@ use std::fs;
 
 use super::merge::{merge_payload, MergeContext, MergeOutcome, TOMBSTONE_RETENTION_DAYS};
 use super::vault::{
-    self, KdfParams, VaultEntry, VaultGroup, VaultPayload, VaultSshProfile, VaultTag,
-    DEFAULT_VAULT_FILENAME,
+    self, KdfParams, VaultEntry, VaultGroup, VaultK8sProfile, VaultPayload, VaultSshProfile,
+    VaultTag, DEFAULT_VAULT_FILENAME,
 };
 use super::{EntrySecrets, SshSecrets};
 use crate::models::{
-    ConnectionGroup, ConnectionParams, ConnectionTag, DatabaseSelection, SshConnection,
+    ConnectionGroup, ConnectionParams, ConnectionTag, DatabaseSelection, K8sConnection,
+    SshConnection,
 };
 
 fn ssh_profile(id: &str, host: &str, password: Option<&str>) -> SshConnection {
@@ -309,6 +310,50 @@ mod merge {
 
         assert_eq!(merged, remote);
         assert!(notes.is_empty());
+    }
+
+    #[test]
+    fn a_k8s_tunnel_travels_with_the_connection() {
+        let profile = |name: &str, updated_at: &str| VaultK8sProfile {
+            profile: K8sConnection {
+                id: "k1".to_string(),
+                name: name.to_string(),
+                context: "prod-cluster".to_string(),
+                namespace: "data".to_string(),
+                resource_type: "service".to_string(),
+                resource_name: "postgres".to_string(),
+                port: 5432,
+                kubectl_path: None,
+                kubeconfig_path: None,
+                shared: Some(true),
+            },
+            updated_at: updated_at.to_string(),
+            updated_by: "alice@box".to_string(),
+            deleted: false,
+        };
+        let payload = |profiles: Vec<VaultK8sProfile>| VaultPayload {
+            k8s_profiles: profiles,
+            ..Default::default()
+        };
+
+        // Pulled from the share when a teammate added it.
+        let (merged, notes) = merge_payload(
+            &VaultPayload::default(),
+            &payload(vec![profile("prod", "T1")]),
+            &VaultPayload::default(),
+            &ctx(),
+        );
+        assert_eq!(merged.k8s_profiles[0].profile.resource_name, "postgres");
+        assert_eq!(outcomes(&notes), vec![MergeOutcome::PulledFromShare]);
+
+        // A remote edit lands when nothing changed here.
+        let (merged, _) = merge_payload(
+            &payload(vec![profile("prod", "T1")]),
+            &payload(vec![profile("production", "T2")]),
+            &payload(vec![profile("prod", "T1")]),
+            &ctx(),
+        );
+        assert_eq!(merged.k8s_profiles[0].profile.name, "production");
     }
 
     #[test]

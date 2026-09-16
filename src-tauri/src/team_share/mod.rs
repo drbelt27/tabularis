@@ -33,6 +33,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use serde::Serialize;
+use zeroize::Zeroizing;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use crate::models::{
@@ -47,11 +48,19 @@ pub mod vault;
 mod tests;
 
 use merge::{MergeContext, MergeOutcome, TOMBSTONE_RETENTION_DAYS};
-use vault::{VaultEntry, VaultFile, VaultGroup, VaultPayload, VaultSshProfile, VaultTag};
+use vault::{
+    VaultEntry, VaultFile, VaultGroup, VaultK8sProfile, VaultPayload, VaultSshProfile, VaultTag,
+};
 
 /// Event emitted after the local connections were changed by a sync, so the
 /// frontend reloads them.
 pub const SYNCED_EVENT: &str = "team-share-synced";
+
+/// Event emitted when something asked for a shared connection's credentials
+/// while the vault was locked. The frontend opens the master-password prompt
+/// on it, so hitting a shared connection after dismissing the prompt at
+/// startup asks again instead of only reporting an error.
+pub const LOCKED_EVENT: &str = "team-share-locked";
 
 /// The credentials of one shared connection. Kept apart from the connection
 /// itself so it is obvious which fields never reach the local file.
@@ -175,10 +184,14 @@ fn non_empty(value: Option<&str>) -> Option<String> {
 }
 
 /// An unlocked vault, for the lifetime of the app session.
+///
+/// Wiped on drop — locking the vault, leaving the share or closing the app
+/// must not leave the master key or the team's credentials lying in freed
+/// memory.
 struct Session {
     /// Master key derived once at unlock. Deriving it costs 64 MiB of Argon2,
     /// so it is not recomputed per operation.
-    key: [u8; 32],
+    key: Zeroizing<[u8; 32]>,
     path: PathBuf,
     /// Payload of the last successful sync: the base of the three-way merge.
     base: VaultPayload,
@@ -394,11 +407,38 @@ fn local_payload<R: Runtime>(app: &AppHandle<R>, session: &Session) -> Result<Va
         })
         .collect();
 
+    // Same rule again for the Kubernetes tunnels the shared connections use.
+    let mut wanted_k8s: HashSet<String> = entries
+        .iter()
+        .filter(|entry| entry.params.k8s_enabled.unwrap_or(false))
+        .filter_map(|entry| entry.params.k8s_connection_id.clone())
+        .collect();
+    wanted_k8s.extend(session.base.k8s_profiles.iter().map(|p| p.profile.id.clone()));
+
+    let k8s_profiles = crate::commands::load_k8s_connections(app)?
+        .into_iter()
+        .filter(|profile| wanted_k8s.contains(&profile.id))
+        .map(|profile| {
+            let previous = find_k8s_profile(&session.base, &profile.id);
+            VaultK8sProfile {
+                profile,
+                updated_at: previous
+                    .map(|p| p.updated_at.clone())
+                    .unwrap_or_else(vault::now_timestamp),
+                updated_by: previous
+                    .map(|p| p.updated_by.clone())
+                    .unwrap_or_else(vault::current_actor),
+                deleted: false,
+            }
+        })
+        .collect();
+
     Ok(VaultPayload {
         entries,
         groups,
         tags,
         ssh_profiles,
+        k8s_profiles,
     })
 }
 
@@ -416,6 +456,10 @@ fn find_tag<'a>(payload: &'a VaultPayload, id: &str) -> Option<&'a VaultTag> {
 
 fn find_ssh_profile<'a>(payload: &'a VaultPayload, id: &str) -> Option<&'a VaultSshProfile> {
     payload.ssh_profiles.iter().find(|p| p.profile.id == id)
+}
+
+fn find_k8s_profile<'a>(payload: &'a VaultPayload, id: &str) -> Option<&'a VaultK8sProfile> {
+    payload.k8s_profiles.iter().find(|p| p.profile.id == id)
 }
 
 /// Write the merged payload into the local `connections.json`, keeping the
@@ -504,7 +548,36 @@ fn materialize<R: Runtime>(
     crate::commands::save_connections_and_invalidate(app, &path, &file)?;
 
     let ssh_secrets = materialize_ssh_profiles(app, payload)?;
+    materialize_k8s_profiles(app, payload)?;
     Ok((secrets, ssh_secrets))
+}
+
+/// Mirror the shared Kubernetes tunnels into the local `k8s_connections.json`.
+/// Simpler than the SSH counterpart because there are no secrets to hold back.
+fn materialize_k8s_profiles<R: Runtime>(
+    app: &AppHandle<R>,
+    payload: &VaultPayload,
+) -> Result<(), String> {
+    if payload.k8s_profiles.is_empty() {
+        return Ok(());
+    }
+    let mut profiles = crate::commands::load_k8s_connections(app)?;
+
+    for shared in &payload.k8s_profiles {
+        let id = &shared.profile.id;
+        if shared.deleted {
+            profiles.retain(|p| &p.id != id || !p.is_shared());
+            continue;
+        }
+        let mut profile = shared.profile.clone();
+        profile.shared = Some(true);
+        match profiles.iter_mut().find(|p| &p.id == id) {
+            Some(slot) => *slot = profile,
+            None => profiles.push(profile),
+        }
+    }
+
+    crate::commands::save_k8s_connections(app, &profiles)
 }
 
 /// Mirror the shared SSH profiles into the local `ssh_connections.json`,
@@ -651,6 +724,9 @@ pub fn attach_secrets<R: Runtime>(
     let state = app.state::<TeamShareState>();
     let guard = state.session.lock().unwrap();
     let Some(session) = guard.as_ref() else {
+        // Ask for the master password instead of leaving the user with a
+        // dead end: the prompt is what they actually need at this point.
+        let _ = app.emit(LOCKED_EVENT, ());
         return Err(
             "This connection is shared with your team. Unlock the team share with the master password to use it."
                 .to_string(),
@@ -679,6 +755,7 @@ pub fn attach_ssh_secrets<R: Runtime>(
     let state = app.state::<TeamShareState>();
     let guard = state.session.lock().unwrap();
     let Some(session) = guard.as_ref() else {
+        let _ = app.emit(LOCKED_EVENT, ());
         return Err(
             "This SSH tunnel is shared with your team. Unlock the team share with the master password to use it."
                 .to_string(),
@@ -877,7 +954,7 @@ pub fn unlock_team_share<R: Runtime>(
 /// Install a fresh session and run the first sync.
 fn open_session<R: Runtime>(
     app: &AppHandle<R>,
-    key: [u8; 32],
+    key: Zeroizing<[u8; 32]>,
     path: PathBuf,
     file: &VaultFile,
 ) -> Result<TeamShareStatus, String> {
@@ -987,6 +1064,17 @@ pub fn disable_team_share<R: Runtime>(
     }
     persistence::save_ssh_connections_file(&ssh_path, &profiles)?;
 
+    // The K8s tunnels follow the same rule, minus the credentials question.
+    let mut k8s = crate::commands::load_k8s_connections(&app)?;
+    if keep_connections {
+        for profile in k8s.iter_mut().filter(|p| p.is_shared()) {
+            profile.shared = None;
+        }
+    } else {
+        k8s.retain(|p| !p.is_shared());
+    }
+    crate::commands::save_k8s_connections(&app, &k8s)?;
+
     {
         let state = app.state::<TeamShareState>();
         *state.session.lock().unwrap() = None;
@@ -1076,8 +1164,9 @@ pub fn set_connections_shared<R: Runtime>(
         }
     }
 
-    // The SSH profiles follow the connections that tunnel through them.
+    // The SSH profiles and K8s tunnels follow the connections that use them.
     reconcile_ssh_profiles(&app, session, &file)?;
+    reconcile_k8s_profiles(&app, &file)?;
 
     crate::commands::save_connections_and_invalidate(&app, &path, &file)?;
     if shared {
@@ -1173,6 +1262,44 @@ fn reconcile_ssh_profiles<R: Runtime>(
 
     if changed {
         persistence::save_ssh_connections_file(&path, &profiles)?;
+    }
+    Ok(())
+}
+
+/// Bring `k8s_connections.json` in line with which connections are shared.
+///
+/// The K8s counterpart of [`reconcile_ssh_profiles`], and a much shorter one:
+/// a tunnel holds no credentials, so joining or leaving the share is only a
+/// flag.
+fn reconcile_k8s_profiles<R: Runtime>(
+    app: &AppHandle<R>,
+    file: &ConnectionsFile,
+) -> Result<(), String> {
+    let wanted: HashSet<String> = file
+        .connections
+        .iter()
+        .filter(|c| c.is_shared() && c.params.k8s_enabled.unwrap_or(false))
+        .filter_map(|c| c.params.k8s_connection_id.clone())
+        .collect();
+
+    let mut profiles = crate::commands::load_k8s_connections(app)?;
+    let mut changed = false;
+    for profile in profiles.iter_mut() {
+        let should_share = wanted.contains(&profile.id);
+        if should_share == profile.is_shared() {
+            continue;
+        }
+        profile.shared = should_share.then_some(true);
+        changed = true;
+        log::info!(
+            "[TeamShare] K8s tunnel {} {} the share",
+            profile.id,
+            if should_share { "joined" } else { "left" }
+        );
+    }
+
+    if changed {
+        crate::commands::save_k8s_connections(app, &profiles)?;
     }
     Ok(())
 }
