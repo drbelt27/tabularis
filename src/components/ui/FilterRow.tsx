@@ -2,11 +2,26 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Plus, Minus } from "lucide-react";
 import type { TableColumn } from "../../types/editor";
-import { getOperatorsForType } from "../../utils/filterBar";
-import type { StructuredFilter, FilterOperator } from "../../utils/filterBar";
+import {
+  applyPickedValues,
+  getOperatorsForType,
+  getPickedValues,
+  isFilterComplete,
+  isValuePickerSupported,
+  NO_VALUE_OPS,
+} from "../../utils/filterBar";
+import type { DistinctValue, StructuredFilter, FilterOperator } from "../../utils/filterBar";
 import { StyledSelect } from "./StyledSelect";
+import { FilterValuePicker } from "./FilterValuePicker";
 
-const NO_VALUE_OPS: FilterOperator[] = ["IS NULL", "IS NOT NULL"];
+/** i18n keys for text-friendly operators (SQL tokens keep their raw labels). */
+const OPERATOR_LABEL_KEYS: Partial<Record<FilterOperator, string>> = {
+  contains: "toolbar.opContains",
+  "starts with": "toolbar.opStartsWith",
+  "ends with": "toolbar.opEndsWith",
+  "is empty": "toolbar.opIsEmpty",
+  "is not empty": "toolbar.opIsNotEmpty",
+};
 
 export interface FilterRowProps {
   filter: StructuredFilter;
@@ -18,6 +33,13 @@ export interface FilterRowProps {
   onEscape: () => void;
   isApplied: boolean;
   onTriggerApplied: () => void;
+  /**
+   * Loads the most frequent values of this row's column for the value picker.
+   * The picker is only offered when this is set (table tabs).
+   */
+  onLoadValues?: (filter: StructuredFilter) => Promise<DistinctValue[]>;
+  /** Identifies the connection and query whose values the picker displays. */
+  valuePickerContextKey?: string;
 }
 
 export const FilterRow = ({
@@ -30,6 +52,8 @@ export const FilterRow = ({
   onEscape,
   isApplied,
   onTriggerApplied,
+  onLoadValues,
+  valuePickerContextKey,
 }: FilterRowProps) => {
   const { t } = useTranslation();
   const selectedCol = columns.find((c) => c.name === filter.column);
@@ -38,6 +62,9 @@ export const FilterRow = ({
 
   const isBetween = filter.operator === "BETWEEN";
   const noValue = NO_VALUE_OPS.includes(filter.operator);
+  const dataType = selectedCol?.data_type ?? "";
+  const showValuePicker =
+    !!onLoadValues && !!filter.column && !noValue && !isBetween && isValuePickerSupported(dataType);
 
   const handleColumnChange = (col: string) => {
     const colMeta = columns.find((c) => c.name === col);
@@ -46,15 +73,25 @@ export const FilterRow = ({
     onChange({ ...filter, column: col, operator: op });
   };
 
+  // Applied feedback only for rows that were actually sent
+  const applySingle = () => {
+    onApplySingle(filter);
+    if (isFilterComplete(filter)) onTriggerApplied();
+  };
+
   const handleValueKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      onApplySingle(filter);
-      onTriggerApplied();
+      applySingle();
     } else if (e.key === "Escape") {
       e.preventDefault();
       onEscape();
     }
+  };
+
+  const operatorLabel = (op: string) => {
+    const key = OPERATOR_LABEL_KEYS[op as FilterOperator];
+    return key ? t(key) : op;
   };
 
   return (
@@ -65,7 +102,7 @@ export const FilterRow = ({
         title={enabled ? t("toolbar.deselectFromApplyAll") : t("toolbar.selectForApplyAll")}
         className={`shrink-0 w-4 h-4 rounded flex items-center justify-center border transition-all ${
           enabled
-            ? "bg-green-500/20 border-green-500/70 text-green-400"
+            ? "bg-accent-success/20 border-accent-success/70 text-accent-success"
             : "border-default/60 text-transparent hover:border-default"
         }`}
       >
@@ -85,23 +122,34 @@ export const FilterRow = ({
         value={filter.operator}
         onChange={(op) => onChange({ ...filter, operator: op as FilterOperator })}
         options={operators}
-        className="w-28"
+        getOptionLabel={operatorLabel}
+        className="w-36"
       />
 
       {/* Value */}
       {!noValue && !isBetween && (
-        <input
-          type="text"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="off"
-          value={filter.value}
-          onChange={(e) => onChange({ ...filter, value: e.target.value })}
-          onKeyDown={handleValueKeyDown}
-          className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-blue-500/60 transition-colors"
-          placeholder={t("toolbar.valuePlaceholder")}
-          autoComplete="off"
-        />
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <input
+            type="text"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="off"
+            value={filter.value}
+            onChange={(e) => onChange({ ...filter, value: e.target.value })}
+            onKeyDown={handleValueKeyDown}
+            className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-focus/60 transition-colors"
+            placeholder={t("toolbar.valuePlaceholder")}
+            autoComplete="off"
+          />
+          {showValuePicker && (
+            <FilterValuePicker
+              key={JSON.stringify([valuePickerContextKey, filter, dataType])}
+              load={() => onLoadValues(filter)}
+              selected={getPickedValues(filter)}
+              onApply={(values) => onChange(applyPickedValues(filter, values, dataType))}
+            />
+          )}
+        </div>
       )}
       {noValue && <div className="flex-1" />}
       {isBetween && (
@@ -114,7 +162,7 @@ export const FilterRow = ({
             value={filter.value}
             onChange={(e) => onChange({ ...filter, value: e.target.value })}
             onKeyDown={handleValueKeyDown}
-            className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-focus/60 transition-colors"
             placeholder={t("toolbar.fromPlaceholder")}
           />
           <span className="text-[10px] text-muted shrink-0 font-mono uppercase tracking-wider">AND</span>
@@ -126,7 +174,7 @@ export const FilterRow = ({
             value={filter.value2 ?? ""}
             onChange={(e) => onChange({ ...filter, value2: e.target.value })}
             onKeyDown={handleValueKeyDown}
-            className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-blue-500/60 transition-colors"
+            className="flex-1 min-w-0 bg-base border border-default rounded px-2 py-1 text-xs text-secondary font-mono focus:outline-none focus:border-focus/60 transition-colors"
             placeholder={t("toolbar.toPlaceholder")}
           />
         </div>
@@ -134,11 +182,11 @@ export const FilterRow = ({
 
       {/* Apply -- applies only this row, does NOT close panel */}
       <button
-        onClick={() => { onApplySingle(filter); onTriggerApplied(); }}
+        onClick={applySingle}
         className={`shrink-0 px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
           isApplied
-            ? "bg-green-600/20 border-green-500/50 text-green-400"
-            : "bg-blue-600/15 border-blue-500/40 text-blue-300 hover:bg-blue-600/25 hover:border-blue-400/60"
+            ? "bg-accent-success/20 border-accent-success/50 text-accent-success"
+            : "bg-accent-primary/15 border-accent-primary/40 text-accent hover:bg-accent-primary/25 hover:border-accent-primary/60"
         }`}
       >
         {isApplied ? t("toolbar.applied") : t("toolbar.apply")}
@@ -149,14 +197,14 @@ export const FilterRow = ({
         <button
           onClick={() => onDuplicate(filter)}
           title={t("toolbar.duplicateFilter")}
-          className="w-6 h-6 flex items-center justify-center rounded text-muted hover:text-blue-300 hover:bg-blue-600/15 transition-colors"
+          className="w-6 h-6 flex items-center justify-center rounded text-muted hover:text-accent hover:bg-accent-primary/15 transition-colors"
         >
           <Plus size={12} />
         </button>
         <button
           onClick={onRemove}
           title={t("toolbar.removeFilter")}
-          className="w-6 h-6 flex items-center justify-center rounded text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-6 h-6 flex items-center justify-center rounded text-muted hover:text-accent-error hover:bg-accent-error/10 transition-colors"
         >
           <Minus size={12} />
         </button>

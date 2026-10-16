@@ -349,6 +349,24 @@ describe('settings', () => {
       expect(result.model).toBeNull();
     });
 
+    it('should not auto-select requesty even when its key exists', () => {
+      const keyStatus: Record<AiProvider, boolean> = {
+        openai: false,
+        anthropic: false,
+        openrouter: false,
+        requesty: true,
+        minimax: false,
+      };
+      const models: Record<string, string[]> = {
+        requesty: ['openai/gpt-4o-mini'],
+      };
+
+      const result = detectAIProviderFromKeys(keyStatus, models);
+
+      expect(result.provider).toBeNull();
+      expect(result.model).toBeNull();
+    });
+
     it('should return null model when no models available for provider', () => {
       const keyStatus: Record<AiProvider, boolean> = {
         openai: true,
@@ -461,6 +479,7 @@ describe('settings', () => {
       // Mock document
       const styleMock = {
         setProperty: vi.fn(),
+        removeProperty: vi.fn(),
       };
       Object.defineProperty(document, 'documentElement', {
         value: { style: styleMock },
@@ -485,10 +504,18 @@ describe('settings', () => {
       );
     });
 
-    it('should apply font directly to body', () => {
+    it('should apply an explicit font directly to body', () => {
+      applyFontToDocument('Roboto', 14);
+
+      expect(document.body.style.fontFamily).toBe(FONT_MAP['Roboto']);
+      expect(document.body.style.fontSize).toBe('14px');
+    });
+
+    it('should leave the base font to the theme for the default choice', () => {
       applyFontToDocument('System', 14);
-      
-      expect(document.body.style.fontFamily).toBe(FONT_MAP['System']);
+
+      expect(document.documentElement.style.setProperty).not.toHaveBeenCalledWith('--font-base', expect.anything());
+      expect(document.body.style.removeProperty).toHaveBeenCalledWith('font-family');
       expect(document.body.style.fontSize).toBe('14px');
     });
 

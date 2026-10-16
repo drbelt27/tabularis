@@ -5,6 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MainLayout } from "../../../src/components/layout/MainLayout";
 
+vi.mock("../../../src/contexts/PluginRegistryProvider", () => ({
+  PluginRegistryProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
+vi.mock("../../../src/components/plugins/PluginUpdateToast", () => ({
+  PluginUpdateToast: () => null,
+}));
+
 vi.mock("../../../src/components/layout/Sidebar", () => ({
   Sidebar: () => <aside>Sidebar</aside>,
 }));
@@ -22,7 +30,9 @@ vi.mock("../../../src/components/layout/ProductionBanner", () => ({
 }));
 
 vi.mock("../../../src/components/layout/CommandPaletteScopeBridge", () => ({
-  CommandPaletteScopeBridge: () => null,
+  CommandPaletteScopeBridge: ({ scopeId }: { scopeId: string }) => (
+    <div data-testid={`command-scope-${scopeId}`} />
+  ),
 }));
 
 vi.mock("../../../src/contexts/CommandPaletteProvider", () => ({
@@ -97,5 +107,52 @@ describe("MainLayout", () => {
     );
 
     expect(screen.queryByTestId("production-banner")).not.toBeInTheDocument();
+  });
+
+  it("should delegate the root command scope to the editor route", () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={["/editor"]}>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route path="editor" element={<div>Editor</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByTestId("command-scope-root")).not.toBeInTheDocument();
+
+    unmount();
+
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route path="settings" element={<div>Settings</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("command-scope-root")).toBeInTheDocument();
+  });
+
+  it("should provide root commands while the editor route is loading", () => {
+    const pending = new Promise<never>(() => {});
+    const SuspendedEditor = () => {
+      throw pending;
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/editor"]}>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route path="editor" element={<SuspendedEditor />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("command-scope-root")).toBeInTheDocument();
   });
 });

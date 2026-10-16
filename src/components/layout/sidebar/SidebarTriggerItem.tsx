@@ -9,6 +9,7 @@ interface SidebarTriggerItemProps {
   trigger: TriggerInfo;
   connectionId: string;
   schema?: string;
+  database?: string;
   onContextMenu: (
     e: React.MouseEvent,
     type: string,
@@ -22,6 +23,7 @@ interface SidebarTriggerItemProps {
 export const SidebarTriggerItem = ({
   trigger,
   schema,
+  database,
   onContextMenu,
   onDoubleClick,
 }: SidebarTriggerItemProps) => {
@@ -30,7 +32,7 @@ export const SidebarTriggerItem = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onContextMenu(e, "trigger", trigger.name, trigger.name, { ...trigger, schema } as unknown as ContextMenuData);
+    onContextMenu(e, "trigger", trigger.name, trigger.name, { ...trigger, schema, database } as unknown as ContextMenuData);
   };
 
   const badge = [trigger.timing, trigger.event].filter(Boolean).join(" ");
@@ -47,7 +49,7 @@ export const SidebarTriggerItem = ({
     >
       <Zap
         size={13}
-        className="text-muted group-hover:text-yellow-400 shrink-0"
+        className="text-muted group-hover:text-accent-warning shrink-0"
       />
       <span className="truncate flex-1">{trigger.name}</span>
       {badge && (

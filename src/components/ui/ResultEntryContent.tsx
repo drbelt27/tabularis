@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
+import type { Ref } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { DataGrid } from "./DataGrid";
+import { DataGrid, type DataGridCommandTarget } from "./DataGrid";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { PaginationControls } from "./PaginationControls";
-import { formatDuration } from "../../utils/formatTime";
+import { formatDuration, formatTimingTooltip } from "../../utils/formatTime";
+import { useTimingLabels } from "../../hooks/useTimingLabels";
 import { getStackedGridHeight } from "../../utils/multiResult";
 import type { QueryResultEntry } from "../../types/editor";
 
@@ -14,7 +16,11 @@ interface ResultEntryContentProps {
   csvDelimiter: string;
   csvIncludeHeaders: boolean;
   onPageChange: (page: number) => void;
+  onCopyAllRows?: () => void;
   compact?: boolean;
+  commandTargetRef?: Ref<DataGridCommandTarget>;
+  initialScrollTop?: number;
+  onScrollTopChange?: (scrollTop: number) => void;
 }
 
 export function ResultEntryContent({
@@ -24,22 +30,27 @@ export function ResultEntryContent({
   csvDelimiter,
   csvIncludeHeaders,
   onPageChange,
+  onCopyAllRows,
   compact,
+  commandTargetRef,
+  initialScrollTop,
+  onScrollTopChange,
 }: ResultEntryContentProps) {
   const { t } = useTranslation();
+  const timingLabels = useTimingLabels();
 
   if (entry.isLoading) {
     if (compact) {
       return (
         <div className="flex items-center gap-2 px-3 py-4 text-muted text-xs">
-          <div className="w-3 h-3 border-2 border-surface-secondary border-t-blue-500 rounded-full animate-spin" />
+          <div className="w-3 h-3 border-2 border-surface-secondary border-t-accent-primary rounded-full animate-spin" />
           <span>{t("editor.executingQuery")}</span>
         </div>
       );
     }
     return (
       <div className="flex flex-col items-center justify-center h-full text-muted">
-        <div className="w-12 h-12 border-4 border-surface-secondary border-t-blue-500 rounded-full animate-spin mb-4" />
+        <div className="w-12 h-12 border-4 border-surface-secondary border-t-accent-primary rounded-full animate-spin mb-4" />
         <p className="text-sm">{t("editor.executingQuery")}</p>
       </div>
     );
@@ -62,6 +73,17 @@ export function ResultEntryContent({
     );
   }
 
+  const timingTooltip = entry.result
+    ? formatTimingTooltip(
+        {
+          serverTimeMs: entry.result.server_time_ms,
+          fetchTimeMs: entry.result.fetch_time_ms,
+          totalTimeMs: entry.executionTime,
+        },
+        timingLabels,
+      ) ?? undefined
+    : undefined;
+
   // A statement that returns no result set (INSERT/UPDATE/DELETE/DDL such as
   // CREATE/ALTER/DROP VIEW) still succeeded — surface that explicitly instead
   // of an empty grid with a misleading "0 rows retrieved" header.
@@ -69,7 +91,7 @@ export function ResultEntryContent({
     const affected = entry.result.affected_rows ?? 0;
     const time =
       entry.executionTime !== null ? (
-        <span className="text-muted font-mono">
+        <span className="text-muted font-mono" title={timingTooltip}>
           ({formatDuration(entry.executionTime)})
         </span>
       ) : null;
@@ -77,7 +99,7 @@ export function ResultEntryContent({
     if (compact) {
       return (
         <div className="flex items-center gap-2 px-3 py-3 text-xs">
-          <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+          <CheckCircle2 size={14} className="text-accent-success shrink-0" />
           <span className="text-primary">{t("editor.queryExecuted")}</span>
           {affected > 0 && (
             <span className="text-secondary">
@@ -91,7 +113,7 @@ export function ResultEntryContent({
 
     return (
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 text-center px-4">
-        <CheckCircle2 size={32} className="text-green-500" />
+        <CheckCircle2 size={32} className="text-accent-success" />
         <p className="text-sm font-medium text-primary">
           {t("editor.queryExecuted")}
         </p>
@@ -110,6 +132,7 @@ export function ResultEntryContent({
     return (
       <div style={{ height: gridHeight }} className="overflow-hidden">
         <DataGrid
+          ref={commandTargetRef}
           key={`${entry.id}-${entry.result.rows.length}`}
           columns={entry.result.columns}
           data={entry.result.rows}
@@ -122,6 +145,11 @@ export function ResultEntryContent({
           csvDelimiter={csvDelimiter}
           csvIncludeHeaders={csvIncludeHeaders}
           readonly={true}
+          totalRows={entry.result.pagination?.total_rows}
+          hasMore={entry.result.pagination?.has_more}
+          initialScrollTop={initialScrollTop}
+          onScrollTopChange={onScrollTopChange}
+          onCopyAllRows={onCopyAllRows}
         />
       </div>
     );
@@ -135,9 +163,20 @@ export function ResultEntryContent({
           <span className="truncate whitespace-nowrap">
             {t("editor.rowsRetrieved", {
               count: entry.result.rows.length,
-            })}{" "}
+            })}
+            {entry.result.columns.length > 0 && (
+              <span className="hidden @[400px]:inline text-muted">
+                {" · "}
+                {t("editor.columnsCount", {
+                  count: entry.result.columns.length,
+                })}
+              </span>
+            )}{" "}
             {entry.executionTime !== null && (
-              <span className="hidden @[400px]:inline text-muted ml-2 font-mono">
+              <span
+                className="hidden @[400px]:inline text-muted ml-2 font-mono"
+                title={timingTooltip}
+              >
                 ({formatDuration(entry.executionTime)})
               </span>
             )}
@@ -158,6 +197,7 @@ export function ResultEntryContent({
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         <DataGrid
+          ref={commandTargetRef}
           key={`${entry.id}-${entry.result.rows.length}`}
           columns={entry.result.columns}
           data={entry.result.rows}
@@ -170,6 +210,11 @@ export function ResultEntryContent({
           csvDelimiter={csvDelimiter}
           csvIncludeHeaders={csvIncludeHeaders}
           readonly={true}
+          totalRows={entry.result.pagination?.total_rows}
+          hasMore={entry.result.pagination?.has_more}
+          initialScrollTop={initialScrollTop}
+          onScrollTopChange={onScrollTopChange}
+          onCopyAllRows={onCopyAllRows}
         />
       </div>
     </div>

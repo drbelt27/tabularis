@@ -1,8 +1,33 @@
 {
   "toolbar": {
+    "valuePicker": {
+      "open": "값에서 선택",
+      "title": "값 선택",
+      "search": "값 검색",
+      "loading": "값을 불러오는 중…",
+      "error": "값을 불러올 수 없습니다",
+      "retry": "다시 시도",
+      "empty": "이 열에 값이 없습니다",
+      "noMatch": "일치하는 값이 없습니다",
+      "limited": "개수 기준 상위 {{count}}개",
+      "use": "선택한 {{count}}개 사용",
+      "useNone": "선택 항목 사용"
+    },
+    "autoRefresh": {
+      "label": "자동 새로고침",
+      "off": "끄기",
+      "seconds": "{{seconds}}초",
+      "paused": "편집 중 일시 중지됨",
+      "pausedSelection": "행이 선택된 동안 일시 중지됨",
+      "refresh": "테이블 새로고침",
+      "failed": "새로고침 실패: {{error}}"
+    },
     "filters": "필터",
     "toggleFilterPanel": "구조화된 필터 패널 토글",
     "filterConditions": "필터 조건",
+    "matchMode": "일치 모드",
+    "matchAll": "모두 일치",
+    "matchAny": "하나라도 일치",
     "activeOf": "{{total}}개 중 {{active}}개 적용됨",
     "noFilters": "필터 없음 —",
     "addFirstFilter": "첫 필터 추가하기",
@@ -21,11 +46,17 @@
     "selectForApplyAll": "전체 적용에 포함",
     "valuePlaceholder": "값",
     "fromPlaceholder": "시작",
-    "toPlaceholder": "끝"
+    "toPlaceholder": "끝",
+    "opContains": "포함",
+    "opStartsWith": "으로 시작",
+    "opEndsWith": "으로 끝남",
+    "opIsEmpty": "비어 있음",
+    "opIsNotEmpty": "비어 있지 않음"
   },
   "common": {
     "save": "저장",
     "close": "닫기",
+    "resizeColumn": "열 크기 조정",
     "cancel": "취소",
     "delete": "삭제",
     "edit": "편집",
@@ -63,6 +94,7 @@
     "materializedViews": "구체화 뷰",
     "refreshMaterializedView": "새로고침",
     "showDefinition": "정의 보기",
+    "copyDdl": "DDL 복사",
     "editView": "뷰 편집",
     "viewDefinition": "뷰 정의",
     "dropView": "뷰 삭제",
@@ -83,6 +115,8 @@
     "noTables": "테이블이 없습니다",
     "expandTable": "{{name}} 테이블 펼치기",
     "collapseTable": "{{name}} 테이블 접기",
+    "expandView": "{{name}} 뷰 펼치기",
+    "collapseView": "{{name}} 뷰 접기",
     "columns": "개 컬럼",
     "parameters": "개 매개변수",
     "noParameters": "매개변수 없음",
@@ -95,6 +129,9 @@
     "failDeleteIndex": "인덱스 삭제에 실패했습니다: ",
     "modifyColumn": "컬럼 수정",
     "copyName": "이름 복사",
+    "plainName": "이름",
+    "quotedName": "따옴표로 묶은 이름",
+    "qualifiedName": "스키마로 한정된 이름",
     "openInEditor": "에디터에서 열기",
     "openInNewWindow": "새 창에서 열기",
     "closePanel": "패널 닫기",
@@ -164,6 +201,7 @@
     "splitHorizontal": "가로로 분할",
     "separateConnections": "연결 분리",
     "splitGroup": "그룹 분할",
+    "resizePanels": "패널 크기 조정",
     "filterTables": "테이블 필터...",
     "noTablesMatch": "일치하는 테이블이 없습니다",
     "filterDatabases": "데이터베이스 필터...",
@@ -176,6 +214,16 @@
     "noQueryHistory": "쿼리 기록이 없습니다",
     "noHistorySearchResults": "검색과 일치하는 쿼리가 없습니다",
     "searchHistory": "기록 검색...",
+    "historyOutcomeFilter": "결과로 필터",
+    "historyOutcomeAny": "모든 결과",
+    "historyOutcomeSucceeded": "성공",
+    "historyOutcomeFailed": "실패",
+    "historyTimeRangeFilter": "기간으로 필터",
+    "historyTimeAll": "전체 기간",
+    "historyTimeLastHour": "지난 1시간",
+    "historyTimeToday": "오늘",
+    "historyTimeLast7Days": "지난 7일",
+    "historyTimeLast30Days": "지난 30일",
     "clearAllHistory": "전체 기록 지우기",
     "historyRecoveredTitle": "쿼리 기록이 초기화되었습니다",
     "historyRecoveredBody": "기록 파일이 손상되어 별도로 이동했습니다. 이후 쿼리는 정상적으로 기록됩니다. 백업 파일:",
@@ -187,6 +235,16 @@
     "insertToEditor": "에디터에 삽입",
     "openInNewTab": "새 탭에서 열기",
     "copyQuery": "쿼리 복사",
+    "copyDetails": "세부 정보 복사",
+    "historyDetails": {
+      "database": "데이터베이스",
+      "executed": "실행 시각",
+      "duration": "소요 시간",
+      "rowsAffected": "영향받은 행",
+      "status": "상태",
+      "success": "성공",
+      "error": "오류"
+    },
     "runQuery": "쿼리 실행",
     "dateGroupToday": "오늘",
     "dateGroupYesterday": "어제",
@@ -233,6 +291,11 @@
       "setup": "설정",
       "activity": "활동",
       "safety": "안전"
+    },
+    "output": {
+      "title": "도구 출력",
+      "formatLabel": "기본 출력 형식",
+      "formatDescription": "MCP 도구 호출에서 output_format을 지정하지 않을 때 사용합니다. JSON은 호환성을 유지하며 TOON은 토큰 사용량을 줄일 수 있습니다."
     },
     "safety": {
       "readOnlyTitle": "읽기 전용 모드",
@@ -284,6 +347,7 @@
     "deleteTitle": "삭제 확인",
     "failConnect": "{{name}}에 연결하지 못했습니다. 설정을 확인하거나 데이터베이스가 실행 중인지 확인하세요.",
     "failDisconnect": "데이터베이스 연결 해제에 실패했습니다",
+    "failDelete": "연결 삭제에 실패했습니다",
     "failDuplicate": "연결 복제에 실패했습니다",
     "connecting": "연결하는 중...",
     "open": "열기",
@@ -457,7 +521,7 @@
     "darkTheme": "다크 테마",
     "fontFamily": "글꼴",
     "fonts": {
-      "system": "시스템 기본값",
+      "system": "테마 기본값",
       "systemDesc": "운영체제 기본 글꼴을 사용합니다",
       "custom": "사용자 지정 글꼴",
       "customPlaceholder": "예: Comic Sans MS",
@@ -480,6 +544,14 @@
       "confirm": "확인",
       "cancel": "취소"
     },
+    "dataGrid": {
+      "zebraStripes": "줄무늬 행 배경",
+      "zebraStripesDesc": "넓은 테이블에서 행을 더 쉽게 추적할 수 있도록 한 행 건너 음영을 적용합니다.",
+      "defaultSortDirection": "기본 정렬 방향",
+      "defaultSortDirectionDesc": "열 머리글을 처음 클릭했을 때의 초기 정렬 순서입니다.",
+      "sortAscending": "오름차순",
+      "sortDescending": "내림차순"
+    },
     "appearance_general": "일반",
     "appearance_sqlEditor": "SQL 에디터",
     "appearance_editorTheme": "에디터 테마",
@@ -491,6 +563,8 @@
     "appearance_editorTabSize": "탭 크기",
     "appearance_editorWordWrap": "자동 줄바꿈",
     "appearance_editorWordWrapDesc": "에디터에서 가로 스크롤 대신 긴 줄을 자동으로 줄바꿈합니다.",
+    "appearance_editorHighlightInvisibleCharacters": "보이지 않는 문자 표시",
+    "appearance_editorHighlightInvisibleCharactersDesc": "SQL에서 숨겨진 유니코드 문자와 비슷하게 보이는 문자를 표시합니다.",
     "appearance_editorShowLineNumbers": "줄 번호 표시",
     "appearance_editorShowLineNumbersDesc": "에디터 여백에 줄 번호를 표시합니다.",
     "appearance_editorAcceptSuggestionOnEnter": "Enter로 제안 수락",
@@ -500,6 +574,10 @@
     "runStatementUnderCursorDesc": "스크립트에 여러 구문이 있을 때 쿼리 선택 창을 표시하지 않고 커서 위치의 구문을 실행합니다. 특정 범위를 실행하려면 텍스트를 선택하세요.",
     "safetyConfirmationDelay": "안전 확인 지연",
     "safetyConfirmationDelayDesc": "파괴적인 쿼리와 프로덕션 쓰기의 확인 버튼을 5초 동안 비활성화합니다.",
+    "notifyLongQueries": "긴 쿼리 완료 시 알림",
+    "notifyLongQueriesDesc": "Tabularis가 백그라운드에 있는 동안 쿼리가 완료되면 데스크톱 알림을 보냅니다.",
+    "notifyLongQueriesThreshold": "알림 기준 시간",
+    "notifyLongQueriesThresholdDesc": "이 시간 이상 실행된 쿼리에만 알림을 보냅니다.",
     "formatter_title": "SQL 포맷터",
     "formatter_keywordCase": "키워드 대소문자",
     "formatter_keywordCaseDesc": "포맷 후 SQL 키워드(SELECT, FROM, WHERE)의 대소문자 처리.",
@@ -514,6 +592,10 @@
     "formatter_linesBetweenQueriesDesc": "SQL 문 사이에 삽입할 빈 줄 수.",
     "formatter_denseOperators": "밀집 연산자",
     "formatter_denseOperatorsDesc": "연산자 주위 공백 제거 (예: a = 1 → a=1).",
+    "autocomplete_title": "자동완성",
+    "autocomplete_keywordCase": "키워드 대소문자",
+    "autocomplete_keywordCaseDesc": "자동완성으로 삽입되는 SQL 키워드의 대소문자.",
+    "autocomplete_keywordCaseMatch": "입력에 맞춤",
     "editConfigJson": "config.json 편집",
     "editConfigJsonDesc": "원본 설정 파일을 직접 편집합니다. 변경 사항을 적용하려면 재시작이 필요합니다.",
     "configJsonModal": {
@@ -639,7 +721,7 @@
     "clearLogs": "로그 지우기",
     "clearLogsConfirm": "모든 로그를 지우시겠습니까?",
     "exportLogs": "로그 내보내기",
-    "exportLogsSuccess": "로그가 클립보드로 내보내졌습니다",
+    "exportLogsSuccess": "로그를 내보냈습니다",
     "noLogs": "표시할 로그가 없습니다",
     "refreshLogs": "새로고침",
     "logLevel": "레벨",
@@ -674,6 +756,11 @@
     "erDiagramDefaultLayout": "기본 레이아웃",
     "erDiagramDefaultLayoutDesc": "ER 다이어그램의 기본 배치 방향을 선택하세요",
     "plugins": {
+      "runtimeTitle": "플러그인 런타임",
+      "callTimeout": "호출 시간 제한",
+      "callTimeoutDesc": "Tabularis가 플러그인의 단일 요청(쿼리 포함) 응답을 기다리는 최대 시간입니다. 0으로 설정하면 제한이 해제됩니다. 각 플러그인은 자체 설정에서 이 값을 재정의할 수 있습니다.",
+      "shutdownGrace": "종료 유예 시간",
+      "shutdownGraceDesc": "플러그인을 중지하기 전에 Tabularis가 진행 중인 요청이 끝날 때까지 기다리는 시간입니다(최소 1초). 각 플러그인은 자체 설정에서 이 값을 재정의할 수 있습니다.",
       "title": "플러그인",
       "overviewTitle": "플러그인 센터",
       "overviewDesc": "확장 프로그램을 설치하고, 플러그인 드라이버를 관리하고, 런타임 설정을 관리하세요.",
@@ -687,6 +774,7 @@
       "loadingRegistry": "플러그인 레지스트리를 불러오는 중...",
       "registryError": "레지스트리를 불러오지 못했습니다",
       "installed": "설치됨",
+      "latest": "최신",
       "by": "제작:",
       "platformNotSupported": "현재 플랫폼에서는 사용할 수 없습니다",
       "update": "업데이트",
@@ -703,6 +791,13 @@
       "filterAll": "전체",
       "filterInstalled": "설치됨",
       "filterUpdates": "업데이트",
+      "kindFilter": "종류별 필터",
+      "kindAll": "모든 종류",
+      "kindDrivers": "드라이버",
+      "kindThemes": "테마",
+      "kindTheme": "테마",
+      "kindDriver": "드라이버",
+      "manageThemes": "모양에서 관리",
       "searchNoResults": "검색과 일치하는 플러그인이 없습니다.",
       "version": "버전",
       "requiresVersion": "Tabularis {{version}} 이상 필요",
@@ -739,6 +834,14 @@
         "configure": "인터프리터 설정"
       },
       "pluginSettings": {
+        "callTimeout": "호출 시간 제한",
+        "callTimeoutDesc": "이 플러그인에 대해서만 전역 호출 시간 제한을 재정의합니다. 0은 제한 해제, 비워 두면 전역 값을 상속합니다.",
+        "callTimeoutPlaceholder": "전역 값 상속 ({{seconds}}초)",
+        "callTimeoutInherit": "전역 값 상속",
+        "shutdownGrace": "종료 유예 시간",
+        "shutdownGraceDesc": "이 플러그인에 대해서만 전역 종료 유예 시간을 재정의합니다(최소 1초). 비워 두면 전역 값을 상속합니다.",
+        "shutdownGracePlaceholder": "전역 값 상속 ({{seconds}}초)",
+        "shutdownGraceInherit": "전역 값 상속",
         "title": "플러그인 설정",
         "interpreter": "인터프리터",
         "interpreterDesc": "선택 사항입니다. 이 플러그인을 실행할 실행 파일을 지정하세요 (예: macOS/Linux의 python3, Windows의 python 또는 전체 경로). 비워두면 기본값을 사용합니다.",
@@ -781,7 +884,8 @@
       "categories": {
         "editor": "에디터",
         "navigation": "탐색",
-        "data_grid": "데이터 그리드"
+        "data_grid": "데이터 그리드",
+        "notebook": "노트북"
       },
       "runQuery": "쿼리 실행",
       "runQueryEditor": "쿼리 실행 (에디터에서)",
@@ -793,9 +897,13 @@
       "toggleRightSidebar": "오른쪽 사이드바 전환",
       "focusTableFilter": "테이블 필터에 포커스",
       "openConnections": "연결 열기",
+      "openSettings": "설정 열기",
+      "conflict": "이 단축키는 “{{shortcut}}” 단축키와 충돌합니다.",
+      "needsModifier": "Ctrl 또는 Alt 같은 조합 키를 추가하세요.",
       "newConnection": "새 연결",
       "newTab": "새 탭",
       "closeTab": "탭 닫기",
+      "reopenClosedTab": "닫은 탭 다시 열기",
       "nextPage": "다음 페이지",
       "prevPage": "이전 페이지",
       "saveGridChanges": "대기 중인 변경 사항 저장",
@@ -805,15 +913,20 @@
       "pressKeys": "단축키 조합 입력...",
       "notebookRunAll": "모든 셀 실행",
       "categories_notebook": "노트북",
-      "pasteImportClipboard": "클립보드에서 가져오기",
+      "pasteImportClipboard": "데이터 가져오기",
       "quickNavigator": "빠른 탐색기",
       "formatSql": "SQL 포맷",
       "extendCellRange": "셀 범위 확장",
       "jumpToEdge": "그리드 가장자리로 이동",
+      "jumpToColumn": "열로 이동",
       "extendCellRangeToEdge": "셀 범위를 가장자리까지 확장",
       "selectRow": "행 선택",
       "selectColumn": "열 선택",
-      "commandPaletteActions": "작업 검색"
+      "commandPalette": "명령 팔레트",
+      "commandPaletteActions": "작업 검색",
+      "editorZoomIn": "편집기: 글꼴 크기 늘리기",
+      "editorZoomOut": "편집기: 글꼴 크기 줄이기",
+      "editorZoomReset": "편집기: 글꼴 크기 초기화"
     },
     "aiActivity": "AI 활동",
     "storage": {
@@ -893,6 +1006,22 @@
     }
   },
   "update": {
+    "badges": {
+      "morePlugins": "{{count}}개 더 — 모든 업데이트를 보려면 플러그인을 여세요",
+      "driverUpdate": "드라이버 업데이트 사용 가능",
+      "themeUpdate": "테마 업데이트 사용 가능",
+      "tag": "업데이트",
+      "driverTooltip": "{{name}} {{version}}을(를) 사용할 수 있습니다. 이 플러그인은 여러 연결에서 공유됩니다. 플러그인 → 업데이트에서 관리하세요.",
+      "core_one": "코어 업데이트 {{count}}개 사용 가능",
+      "core_other": "코어 업데이트 {{count}}개 사용 가능",
+      "plugins_one": "플러그인 업데이트 {{count}}개 사용 가능",
+      "plugins_other": "플러그인 업데이트 {{count}}개 사용 가능",
+      "coreDetails": "Tabularis {{version}}을 사용할 수 있습니다. 정보를 열어 코어 업데이트를 확인하세요.",
+      "pluginDetails_one": "업데이트 가능: {{plugins}}",
+      "pluginDetails_other": "업데이트 가능: {{plugins}}",
+      "toastTitle": "플러그인 업데이트 사용 가능",
+      "openPlugins": "플러그인 열기"
+    },
     "newVersionAvailable": "새 버전이 있습니다",
     "version": "버전",
     "releaseNotes": "릴리스 노트",
@@ -930,6 +1059,17 @@
     "configError": "설정에서 AI 제공자를 구성하고 프롬프트를 입력하세요."
   },
   "newConnection": {
+    "ssmForwardHint": "{{document}}(으)로 확인됩니다. 관리형 노드를 통해 {{host}}:{{port}}(으)로 전달합니다. 대상 주소는 일반 탭에서 변경하세요. 루프백 호스트는 노드 자체를 의미합니다.",
+    "ssmIamHint": "대상과 확인된 문서에 대한 ssm:StartSession 권한이 필요합니다.",
+    "ssmNotAvailable": "이 드라이버에서는 AWS SSM을 사용할 수 없습니다.",
+    "ssmPortRequired": "먼저 일반 탭에서 유효한 포트를 설정하세요.",
+    "ssmProfile": "AWS 프로필",
+    "ssmRegion": "AWS 리전",
+    "ssmTarget": "관리형 노드",
+    "ssmTargetRequired": "연결에 사용할 관리형 노드를 입력하세요.",
+    "testSsm": "SSM 테스트",
+    "testSsmHint": "실제 포트 포워딩 세션을 열었다가 다시 닫습니다. 데이터베이스에는 연결하지 않습니다.",
+    "useSsm": "AWS SSM 포트 포워딩 사용",
     "titleNew": "새 연결",
     "titleEdit": "연결 편집",
     "subtitle": "데이터베이스 연결 설정을 구성하세요",
@@ -939,6 +1079,10 @@
     "dbNameRequired": "데이터베이스 이름은 필수입니다",
     "connectionUriRequiresKeychain": "연결 URI는 OS 키체인에 저장해야 합니다. “키체인에 비밀번호 저장”을 활성화하세요.",
     "connectionUriRequired": "연결 URI는 필수입니다",
+    "connectionString": "?? ???",
+    "connectionStringPlaceholder": "?: mysql://user:pass@localhost:3306/db",
+    "connectionStringExample": "?? ??? ??",
+    "chooseConnectionStringExample": "?? ??",
     "dbType": "데이터베이스 종류",
     "host": "호스트",
     "port": "포트",
@@ -954,6 +1098,7 @@
     "loadDatabases": "데이터베이스 불러오기",
     "loadingDatabases": "불러오는 중...",
     "selectDatabases": "데이터베이스",
+    "browseMultipleDatabases": "Browse multiple databases on this connection",
     "appearance": "모양",
     "noDatabasesSelected": "데이터베이스를 하나 이상 선택하세요",
     "selectedDatabases": "데이터베이스 {{count}}개 선택됨",
@@ -978,6 +1123,7 @@
     "sshKeyPassphrasePlaceholder": "암호화된 경우 키 암호를 입력하세요",
     "allowSshPrompt": "SSH 비밀번호/PIN 입력창 허용",
     "saveKeychain": "키체인에 비밀번호 저장",
+    "secretsStoredInPlainText": "비밀번호는 연결 파일에 평문으로 저장됩니다.",
     "testConnection": "연결 테스트",
     "save": "저장",
     "failSave": "연결 저장에 실패했습니다",
@@ -987,6 +1133,7 @@
     "manageSshConnections": "SSH 연결 관리",
     "noSshConnections": "사용 가능한 SSH 연결이 없습니다",
     "sslMode": "SSL 모드",
+    "sslUnverifiedRemoteHint": "이 모드는 서버 인증서를 확인하지 않습니다. 원격 호스트에는 {{mode}}을(를) 사용하세요.",
     "enableCleartextPlugin": "평문 비밀번호 플러그인 활성화",
     "enableCleartextPluginHint": "mysql_clear_password로 비밀번호를 전송합니다. Warpgate 같은 배스천에 필요합니다. TLS 연결에서만 사용됩니다.",
     "enableCleartextPluginTlsRequired": "평문 비밀번호 플러그인을 사용하려면 위에서 강제 TLS 모드(필수, CA 확인 또는 신원 확인)를 선택하세요.",
@@ -1038,6 +1185,8 @@
     "allDatabases": "모든 데이터베이스",
     "chooseDatabases": "데이터베이스 선택",
     "allDatabasesHint": "연결 시 서버의 모든 데이터베이스가 자동으로 로드됩니다. 서버에서 생성되거나 삭제된 데이터베이스는 이 연결을 수정하지 않아도 자동으로 반영됩니다.",
+    "defaultDatabase": "기본 데이터베이스",
+    "defaultDatabaseHint": "새 쿼리 탭은 이 데이터베이스를 사용합니다. 선택에서 제거하면 다음으로 선택된 데이터베이스가 기본값이 됩니다.",
     "selectDatabasesHint": "이 연결에 포함할 데이터베이스를 선택하세요.",
     "loadDatabasesHint": "데이터베이스 불러오기를 클릭하여 사용 가능한 데이터베이스를 가져오세요."
   },
@@ -1080,8 +1229,15 @@
     "placeholder": "PIN 또는 암호",
     "waiting": "보안 키를 기다리는 중 — 터치하여 확인하세요."
   },
+  "dateInput": {
+    "useShownValue": "이 값 사용"
+  },
   "dataGrid": {
+    "jumpToColumn": "열로 이동",
+    "searchColumns": "열 검색",
+    "noMatchingColumns": "일치하는 열이 없습니다",
     "noRowIdentity": "행을 편집할 수 없습니다: \"{{table}}\"에 기본 키가 없으므로 편집하려면 결과에 테이블의 모든 열이 포함되어야 합니다. 모든 열을 선택하거나(예: SELECT *) 기본 키를 추가하세요.",
+    "resizeRelatedPanel": "드래그하여 패널 크기 조정",
     "keylessRowNotFound": "\"{{column}}\" 업데이트 중 원래 값과 일치하는 행이 없습니다. 테이블에 기본 키가 없고 데이터가 변경되었을 수 있습니다. 새로 고친 후 다시 시도하세요.",
     "keylessDeleteNotFound": "삭제 중 원래 값과 일치하는 행이 없습니다. 테이블에 기본 키가 없고 데이터가 변경되었을 수 있습니다. 새로 고친 후 다시 시도하세요.",
     "newRow": "신규",
@@ -1121,6 +1277,22 @@
     "copyColumnName": "컬럼 이름 복사",
     "copyColumnNameQuoted": "`column` 형식으로 복사",
     "copyColumnNameTable": "table.column 형식으로 복사",
+    "copyColumnNames": "컬럼 이름 복사",
+    "copyColumnNamesLines": "한 줄에 하나씩",
+    "copyColumnNamesJson": "JSON 배열로",
+    "copiedColumnNames_one": "{{count}}개 컬럼 이름이 클립보드에 복사되었습니다",
+    "copiedColumnNames_other": "{{count}}개 컬럼 이름이 클립보드에 복사되었습니다",
+    "copyColumnValuesIn": "열 값을 SQL IN으로 복사",
+    "filterByValue": "이 값으로 필터",
+    "filterEquals": "같음",
+    "filterNotEquals": "같지 않음",
+    "filterIsNull": "NULL",
+    "filterIsNotNull": "NULL 아님",
+    "filterGreaterThan": "보다 큼",
+    "filterGreaterOrEqual": "이상",
+    "filterLessThan": "보다 작음",
+    "filterLessOrEqual": "이하",
+    "filterContains": "포함",
     "copyCells": "{{count}}개 셀 복사",
     "copyRows": "{{count}}개 행 복사",
     "copied": "클립보드에 복사되었습니다",
@@ -1132,6 +1304,7 @@
     "setDefault": "DEFAULT로 설정",
     "setEmpty": "빈 값으로 설정",
     "setServerNow": "현재 타임스탬프 삽입",
+    "setRandomUuid": "무작위 UUID로 설정",
     "previewReferenced": "참조된 레코드 미리보기",
     "openReferenced": "{{table}}에서 참조된 행 열기",
     "revealCell": "셀 표시",
@@ -1181,6 +1354,13 @@
     "newRow": "새 행",
     "editing": "편집 중: {{table}}",
     "rowsRetrieved": "{{count}}개 행 조회됨",
+    "columnsCount_one": "열 {{count}}개",
+    "columnsCount_other": "열 {{count}}개",
+    "timing": {
+      "execution": "실행",
+      "fetch": "가져오기",
+      "total": "전체"
+    },
     "queryExecuted": "쿼리가 성공적으로 실행되었습니다",
     "rowsAffected": "{{count}}개 행 영향받음",
     "autoPaginated": "자동 페이지네이션됨",
@@ -1200,7 +1380,10 @@
       "detached": "결과가 별도 창으로 분리되었습니다",
       "reattach": "다시 붙이기"
     },
+    "renameTab": "이름 바꾸기",
+    "duplicateTab": "탭 복제",
     "closeTab": "탭 닫기",
+    "reopenClosedTab": "닫은 탭 다시 열기",
     "closeOthers": "다른 탭 닫기",
     "closeRight": "오른쪽 탭 닫기",
     "closeLeft": "왼쪽 탭 닫기",
@@ -1260,11 +1443,18 @@
     "rollback": "롤백",
     "pendingCount": "대기 중 {{count}}건",
     "executingQuery": "쿼리를 실행하는 중...",
+    "transactionOpen": "TX",
+    "transactionOpenHint": "트랜잭션 열림 — 이 탭은 COMMIT 또는 ROLLBACK 할 때까지 연결을 유지합니다",
     "exporting": "내보내는 중...",
     "rowsProcessed": "처리된 행",
     "exportLoadedRowsWarning": "총 {{total}}개 행 중 로드된 {{loaded}}개 행만 내보냈습니다. 더 많은 행이 필요하면 결과 페이지를 넘기거나 더 좁은 쿼리를 실행한 뒤 내보내세요.",
     "queryParameters": "쿼리 매개변수",
     "formatSql": "SQL 포맷",
+    "selectCurrentStatement": "현재 문 선택",
+    "convertSelectionToSqlList": "선택 영역을 SQL 목록으로 변환",
+    "transformToUppercase": "대문자로 변환",
+    "transformToLowercase": "소문자로 변환",
+    "removeInvisibleCharacters": "붙여넣은 문자 정리",
     "convertToConsole": "콘솔로 변환",
     "parameters": "매개변수",
     "paramValuePlaceholder": "값 (예: 'text' 또는 123)",
@@ -1415,6 +1605,7 @@
       "addSqlCell": "SQL 셀 추가",
       "addMarkdownCell": "마크다운 셀 추가",
       "addCell": "추가",
+      "resizeResult": "결과 크기 조정",
       "runAll": "모두 실행",
       "runAllTooltip": "모든 SQL 셀을 위에서 아래로 실행",
       "runCell": "셀 실행",
@@ -1535,6 +1726,14 @@
       "collapseAll": "모두 접기",
       "expandAll": "모두 펼치기",
       "collapsed": "접힘"
+    },
+    "queryNotification": {
+      "successTitle": "쿼리 완료",
+      "errorTitle": "쿼리 실패",
+      "body": "{{tab}} · {{duration}}",
+      "batchSuccessTitle": "모두 실행 완료",
+      "batchErrorTitle": "모두 실행 완료(오류 있음)",
+      "batchBody": "{{tab}} · 성공 {{succeeded}}개, 실패 {{failed}}개 · {{duration}}"
     }
   },
   "createTable": {
@@ -1566,6 +1765,7 @@
     "colType": "타입",
     "colNullable": "NULL 허용",
     "colKey": "키",
+    "colDescription": "설명",
     "yes": "예",
     "no": "아니오"
   },
@@ -1639,6 +1839,7 @@
     "exitFullscreen": "전체 화면 종료",
     "noConnection": "연결 ID 없음",
     "noConnectionDesc": "연결 ID 없이는 다이어그램을 표시할 수 없습니다.",
+    "loadError": "다이어그램을 불러오지 못했습니다: {{message}}",
     "switchToVertical": "세로 레이아웃으로 전환",
     "switchToHorizontal": "가로 레이아웃으로 전환",
     "lockNodes": "노드 위치 고정",
@@ -1708,7 +1909,13 @@
     "createSuccess": "트리거가 생성되었습니다",
     "updateSuccess": "트리거가 업데이트되었습니다",
     "recreateTrigger": "트리거 재생성",
-    "confirmRecreate": "트리거를 편집하려면 삭제 후 다시 생성해야 합니다. \"{{trigger}}\" 수정을 계속하시겠습니까?"
+    "confirmRecreate": "트리거를 편집하려면 삭제 후 다시 생성해야 합니다. \"{{trigger}}\" 수정을 계속하시겠습니까?",
+    "functionNameCollision": "A function named \"{{name}}\" already exists. Rename the trigger or drop the function first.",
+    "originalRestored": "원래 트리거를 복원했습니다.",
+    "restoreFailed": "원래 트리거 복원에도 실패했습니다: ",
+    "singleEventHint": "이 데이터베이스는 트리거당 하나의 이벤트만 허용합니다.",
+    "existingFunctionHint": "이 트리거는 기존 함수를 유지합니다. 함수 자체는 SQL 편집기 또는 Raw SQL 모드에서 수정하세요.",
+    "unsupportedDriver": "이 드라이버에서는 트리거 편집이 지원되지 않습니다."
   },
   "community": {
     "title": "커뮤니티에 참여하세요",
@@ -1824,7 +2031,9 @@
   },
   "contextMenu": {
     "openSidebar": "사이드바 에디터에서 열기",
-    "openJsonEditor": "JSON 에디터에서 열기"
+    "openJsonEditor": "JSON 에디터에서 열기",
+    "openLink": "링크 열기",
+    "openLinkFailed": "링크를 열 수 없습니다: {{error}}"
   },
   "blobInput": {
     "noData": "BLOB 데이터 없음",
@@ -1940,10 +2149,17 @@
     "noDatabase": "데이터베이스 없음"
   },
   "clipboardImport": {
-    "title": "클립보드에서 가져오기",
-    "subtitle": "구조화된 데이터를 붙여넣고 가져오기 전에 스키마를 미리 확인하세요",
+    "fileReadError": "파일을 읽을 수 없습니다",
+    "fileNotFile": "일반 파일을 선택하세요.",
+    "fileUnsupported": "CSV, TSV, JSON 또는 Markdown 파일을 선택하세요.",
+    "fileTooLarge": "파일이 20 MiB를 초과합니다. 더 작은 파일을 선택하세요.",
+    "fileHint": "CSV, TSV, JSON 배열 또는 Markdown 표. 최대 파일 크기: 20 MiB.",
+    "fileSource": "파일 선택...",
+    "clipboardSource": "클립보드",
+    "title": "데이터 가져오기",
+    "subtitle": "클립보드 또는 파일에서 구조화된 데이터를 불러와 가져오기 전에 검토합니다",
     "selectTablePlaceholder": "테이블 선택...",
-    "contextMenuLabel": "클립보드에서 가져오기...",
+    "contextMenuLabel": "데이터 가져오기...",
     "firstRowHeader": "첫 행을 헤더로 사용",
     "tableName": "테이블 이름",
     "tableNamePlaceholder": "예: sales_data",
@@ -1967,7 +2183,7 @@
     "success": "\"{{table}}\"에 {{count}}개 행을 가져왔습니다",
     "tableCreated": "새 테이블이 생성되었습니다",
     "openTable": "닫기",
-    "noData": "클립보드에서 데이터를 찾을 수 없습니다",
+    "noData": "선택한 소스에서 데이터를 찾을 수 없습니다",
     "retry": "다시 시도",
     "warningsCount": "파싱 경고 {{count}}개",
     "columnsLabel": "컬럼",
@@ -2135,7 +2351,6 @@
     "outputParameter": "출력 매개변수 — 결과로 반환됨",
     "rawLabel": "원본",
     "rawHint": "문자열 인용 없이 값을 그대로 삽입합니다 (숫자, 표현식)",
-    "runButton": "실행",
     "runTabPrefix": "실행",
     "returnValue": "반환"
   },
@@ -2157,7 +2372,9 @@
     "commands": {
       "openSettings": "설정 열기",
       "openConnections": "연결 관리자 열기",
-      "openTableInConsole": "현재 테이블을 SQL 콘솔에서 열기"
+      "openTableInConsole": "현재 테이블을 SQL 콘솔에서 열기",
+      "toggleWordWrapEnable": "줄 바꿈 활성화",
+      "toggleWordWrapDisable": "줄 바꿈 비활성화"
     }
   },
   "pagination": {
@@ -2222,6 +2439,10 @@
       "summary": "SSH 터널 실패",
       "recovery": "SSH 탭의 설정을 확인하세요."
     },
+    "ssm": {
+      "summary": "AWS SSM 세션 실패",
+      "recovery": "세부 정보를 열어 정확한 AWS 오류를 확인하세요. AWS CLI와 Session Manager 플러그인이 설치되어 있는지, 자격 증명이 유효한지, 관리형 노드가 온라인 상태인지 확인하세요."
+    },
     "db-auth": {
       "summary": "데이터베이스 인증 실패",
       "recovery": "데이터베이스 사용자 이름과 비밀번호를 확인하세요."
@@ -2258,6 +2479,11 @@
         "start": "Kubernetes 포트 포워드 시작 중",
         "ok": "포트 포워드 준비 완료",
         "error": "Kubernetes 포트 포워드 실패"
+      },
+      "ssmForward": {
+        "start": "AWS SSM 포트 포워딩 시작 중",
+        "ok": "포트 포워딩 준비 완료",
+        "error": "AWS SSM 포트 포워딩 실패"
       },
       "dbConnect": {
         "start": "데이터베이스에 연결 중",
@@ -2316,5 +2542,13 @@
         "connection_uri": "연결 문자열을 사용하며, 플러그인에서 아직 지원되지 않음"
       }
     }
+  },
+  "themePackages": {
+    "import": "테마 가져오기",
+    "registryMismatch": "이 패키지는 다른 레지스트리에 속합니다. 업데이트하기 전에 설정된 레지스트리를 명시적으로 변경하세요.",
+    "importedTheme": "가져온 테마", "manage": "테마 관리", "importJSON": "Tabularis JSON 가져오기", "importVSCode": "VS Code에서 가져오기", "edit": "개인 테마 편집", "localPackage": "로컬 패키지", "installTitle": "테마 패키지 설치", "installSubtitle": "구성된 레지스트리의 선언적 테마입니다. 코드는 실행되지 않습니다.", "discover": "플러그인에서 테마 찾아보기", "refresh": "새로 고침", "preview": "미리 보기", "apply": "적용", "confirm": "확인", "duplicate": "개인 테마로 복제", "exportJSON": "독립 JSON 내보내기", "exportPackage": "작성자 패키지 내보내기", "remove": "삭제", "update": "패키지 업데이트", "disable": "패키지 비활성화", "enable": "패키지 활성화", "removePackage": "패키지 제거", "disabled": "비활성화됨", "file": "테마 파일", "name": "테마 이름", "mode": "모드 / 기본 테마", "detectMode": "자동 감지 (모호하면 직접 선택)", "source": "테마 JSON", "search": "테마 검색", "loading": "불러오는 중…", "noThemes": "이 레지스트리에 사용 가능한 테마가 없습니다.", "details": "상세 정보 / 설치", "readme": "README / 스크린샷", "version": "패키지 버전", "latest": "최신 릴리스", "install": "패키지 설치 / 교체", "chooseArchive": "ZIP 파일 선택", "screenshots": "스크린샷(외부에서 열기)", "externalMedia": "이미지와 기타 원격 미디어는 자동으로 로드되지 않습니다. 링크는 브라우저에서 열립니다.", "snapshotEditor": "정확한 편집기 JSON", "snapshotEditorHelp": "이 독립 스냅샷이 기존 별칭 대신 SQL 색상을 제어합니다. 변경 사항을 미리 보고 원래 리비전을 확인한 후 저장합니다.", "recover": "중단된 설치 복구", "recoveryExplanation": "완료되지 않은 테마 작업을 명시적으로 확인하고 복구합니다. 중단된 설치를 복원할 수 있지만 테마를 선택하거나 저장된 설정을 변경하지는 않습니다.", "recoveryDone": "복구 확인이 완료되었습니다. 아래의 남은 문제를 확인하세요.", "catalogIssues": "카탈로그 진단", "fileTooLarge": "파일이 가져오기 크기 제한을 초과합니다.", "previewHint": "미리 보기는 임시입니다. 취소하면 저장된 테마로 돌아가고 적용하면 선택을 저장합니다.", "previewReady": "미리 보기 중입니다. 확인 전에 앱과 편집기를 검토하세요.", "licenseNotice": "가져오기나 내보내기로 재배포 권한이 부여되지는 않습니다. 게시 전에 저작자 표시를 유지하고 라이선스를 확인하세요.", "acknowledge": "위의 변환 제한을 이해하고 동의합니다.", "applyAfterSave": "저장 후 적용", "savedNotApplied": "테마가 저장되었지만 선택에 실패했습니다. 다시 가져오지 말고 저장된 테마를 선택하세요.", "installHint": "설치는 전체 패키지를 교체하지만 변형을 선택하지 않습니다. 미리 보기, 로컬 가져오기, 선택은 다운로드로 집계되지 않습니다.", "installedHint": "패키지가 설치되었습니다. 창을 닫고 모양 설정에서 변형을 선택하세요.", "committedRefreshFailed": "작업은 완료되었지만 카탈로그 새로 고침에 실패했습니다. 다시 시도하기 전에 목록을 새로 고치세요.", "missing": "저장된 선택을 사용할 수 없습니다: {{id}}. 설정을 변경하지 않고 오프라인 대체 테마를 사용합니다.", "downloads": "다운로드: {{count}}", "downloadsUnavailable": "다운로드 횟수를 확인할 수 없습니다", "installedVersion": "설치됨: {{version}}", "minimumVersion": "Tabularis {{version}} 이상 필요", "incompatible": "호환되지 않는 릴리스이거나 단일 범용 아카이브가 없습니다.", "packageWarning": "패키지의 모든 변형에 영향을 줍니다. 저장된 선택은 유지되며 다시 사용 가능해지면 복원됩니다.", "deleteWarning": "개인 테마를 삭제할까요? 해당 테마의 저장된 앱 선택은 기본 테마를 사용합니다.", "duplicateHint": "활성화하지 않고 독립적이며 편집 가능한 개인 복사본을 만듭니다.", "exportError": "패키지 내보내기에 실패했습니다. 독립 JSON 내보내기는 계속 사용할 수 있습니다.", "runtimeWarning": "실제 최초 지원 릴리스를 입력하세요. 개발 빌드 번호가 이전 클라이언트 호환성을 보장하지는 않습니다.", "packageName": "패키지 식별자 (소문자)", "minimumRuntime": "최소 Tabularis 버전", "license": "라이선스 및 저작자 표시", "rightsAcknowledged": "재배포 권한과 저작자 표시를 확인했습니다.",
+    "groups": { "builtin": "기본 제공 · 오프라인", "installed": "설치된 패키지", "personal": "개인 테마" }, "modes": { "light": "밝게", "dark": "어둡게", "high-contrast": "고대비" },
+    "importErrors": { "unrecognized": "인식할 수 없는 VS Code 테마입니다.", "modeRequired": "모드를 선택한 뒤 다시 미리 보세요.", "includeOnly": "include만 있는 테마는 가져올 수 없습니다. 실제 색상을 제공하세요.", "noSupportedData": "지원되는 색상 또는 SQL 토큰 규칙이 없습니다.", "invalidColor": "지원되는 색상의 값이 잘못되었습니다.", "invalidRules": "토큰 규칙이 잘못되었거나 너무 많습니다." },
+    "diagnostics": { "unsupportedKey": "지원되지 않는 필드", "unsupportedColor": "지원되지 않는 색상", "unsupportedScope": "지원되지 않는 범위", "scopeApproximation": "근사 SQL 범위 매핑", "unsupportedStyle": "지원되지 않는 스타일", "ignoredInclude": "include를 불러오지 않음", "ignoredSemanticTokens": "의미 토큰 무시됨", "unsupportedReference": "외부 참조를 불러오지 않음", "unsupportedSetting": "지원되지 않는 설정", "tokenAlphaFlattened": "토큰 불투명도를 기본 배경에 합성", "modeApproximation": "모드 재정의 또는 근사 변환", "diagnosticsTruncated": "추가 진단 생략됨" }
   }
 }

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  approvalConnectionLabel,
   buildVisualExplainDeepLink,
   defaultExportFilename,
   eventsToCsvLines,
@@ -45,12 +46,12 @@ const baseEvent = (overrides: Partial<AiActivityEvent> = {}): AiActivityEvent =>
 describe("getStatusBadgeStyle", () => {
   it("returns green styling for success", () => {
     const s = getStatusBadgeStyle("success");
-    expect(s.text).toContain("green");
+    expect(s.text).toContain("accent-success");
   });
 
   it("returns red styling for error and denied", () => {
-    expect(getStatusBadgeStyle("error").text).toContain("red");
-    expect(getStatusBadgeStyle("denied").text).toContain("red");
+    expect(getStatusBadgeStyle("error").text).toContain("accent-error");
+    expect(getStatusBadgeStyle("denied").text).toContain("accent-error");
   });
 
   it("returns fallback for unknown status", () => {
@@ -61,9 +62,9 @@ describe("getStatusBadgeStyle", () => {
 
 describe("getQueryKindBadgeStyle", () => {
   it("differentiates select / write / ddl", () => {
-    expect(getQueryKindBadgeStyle("select").text).toContain("blue");
-    expect(getQueryKindBadgeStyle("write").text).toContain("yellow");
-    expect(getQueryKindBadgeStyle("ddl").text).toContain("orange");
+    expect(getQueryKindBadgeStyle("select").text).toContain("text-accent");
+    expect(getQueryKindBadgeStyle("write").text).toContain("accent-warning");
+    expect(getQueryKindBadgeStyle("ddl").text).toContain("accent-secondary");
   });
 
   it("falls back when null or unknown", () => {
@@ -372,6 +373,32 @@ describe("isDestructiveApproval", () => {
 
   it("does not flag select", () => {
     expect(isDestructiveApproval({ ...base, queryKind: "select" })).toBe(false);
+  });
+});
+
+describe("approvalConnectionLabel", () => {
+  const base: PendingApproval = {
+    id: "x",
+    createdAt: "2026-04-24T10:00:00Z",
+    sessionId: "s",
+    connectionId: "c",
+    connectionName: "dev",
+    query: "UPDATE t",
+    queryKind: "write",
+    clientHint: null,
+    explainPlan: null,
+    explainError: null,
+  };
+
+  it("shows the connection alone when no database was picked", () => {
+    expect(approvalConnectionLabel(base)).toBe("dev");
+    expect(approvalConnectionLabel({ ...base, database: null })).toBe("dev");
+  });
+
+  it("appends the database the MCP caller picked", () => {
+    expect(approvalConnectionLabel({ ...base, database: "analytics" })).toBe(
+      "dev / analytics",
+    );
   });
 });
 

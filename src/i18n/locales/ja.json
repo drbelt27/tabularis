@@ -1,8 +1,33 @@
 {
   "toolbar": {
+    "valuePicker": {
+      "open": "値から選択",
+      "title": "値を選択",
+      "search": "値を検索",
+      "loading": "値を読み込み中…",
+      "error": "値を読み込めませんでした",
+      "retry": "再試行",
+      "empty": "この列に値がありません",
+      "noMatch": "一致する値がありません",
+      "limited": "件数上位 {{count}} 件",
+      "use": "選択した {{count}} 件を使用",
+      "useNone": "選択を使用"
+    },
+    "autoRefresh": {
+      "label": "自動更新",
+      "off": "オフ",
+      "seconds": "{{seconds}}秒",
+      "paused": "編集中は一時停止",
+      "pausedSelection": "行の選択中は一時停止",
+      "refresh": "テーブルを更新",
+      "failed": "更新に失敗しました: {{error}}"
+    },
     "filters": "フィルター",
     "toggleFilterPanel": "構造化フィルターパネルを切り替え",
     "filterConditions": "フィルター条件",
+    "matchMode": "一致モード",
+    "matchAll": "すべて一致",
+    "matchAny": "いずれか一致",
     "activeOf": "{{total}} 件中 {{active}} 件が有効",
     "noFilters": "フィルターなし —",
     "addFirstFilter": "最初のフィルターを追加",
@@ -21,7 +46,12 @@
     "selectForApplyAll": "すべて適用に含める",
     "valuePlaceholder": "値",
     "fromPlaceholder": "開始",
-    "toPlaceholder": "終了"
+    "toPlaceholder": "終了",
+    "opContains": "含む",
+    "opStartsWith": "で始まる",
+    "opEndsWith": "で終わる",
+    "opIsEmpty": "空である",
+    "opIsNotEmpty": "空でない"
   },
   "tags": {
     "label": "タグ",
@@ -49,6 +79,7 @@
   "common": {
     "save": "保存",
     "close": "閉じる",
+    "resizeColumn": "列のサイズを変更",
     "cancel": "キャンセル",
     "delete": "削除",
     "edit": "編集",
@@ -86,6 +117,7 @@
     "materializedViews": "マテリアライズドビュー",
     "refreshMaterializedView": "更新",
     "showDefinition": "定義を表示",
+    "copyDdl": "DDLをコピー",
     "editView": "ビューを編集",
     "viewDefinition": "ビュー定義",
     "dropView": "ビューを削除",
@@ -106,6 +138,8 @@
     "noTables": "テーブルが見つかりません",
     "expandTable": "テーブル {{name}} を展開",
     "collapseTable": "テーブル {{name}} を折りたたむ",
+    "expandView": "ビュー {{name}} を展開",
+    "collapseView": "ビュー {{name}} を折りたたむ",
     "columns": "カラム",
     "parameters": "パラメータ",
     "noParameters": "パラメータなし",
@@ -118,6 +152,9 @@
     "failDeleteIndex": "インデックスの削除に失敗しました: ",
     "modifyColumn": "カラムを変更",
     "copyName": "名前をコピー",
+    "plainName": "名前",
+    "quotedName": "引用符付きの名前",
+    "qualifiedName": "スキーマ修飾名",
     "openInEditor": "エディタで開く",
     "openInNewWindow": "新しいウィンドウで開く",
     "closePanel": "パネルを閉じる",
@@ -187,6 +224,7 @@
     "splitHorizontal": "水平分割",
     "separateConnections": "接続を分離",
     "splitGroup": "グループを分割",
+    "resizePanels": "パネルのサイズを変更",
     "filterTables": "テーブルをフィルター...",
     "noTablesMatch": "一致するテーブルがありません",
     "filterDatabases": "データベースをフィルター...",
@@ -199,6 +237,16 @@
     "noQueryHistory": "クエリ履歴はありません",
     "noHistorySearchResults": "検索に一致するクエリがありません",
     "searchHistory": "履歴を検索...",
+    "historyOutcomeFilter": "結果で絞り込み",
+    "historyOutcomeAny": "すべての結果",
+    "historyOutcomeSucceeded": "成功",
+    "historyOutcomeFailed": "失敗",
+    "historyTimeRangeFilter": "期間で絞り込み",
+    "historyTimeAll": "全期間",
+    "historyTimeLastHour": "直近1時間",
+    "historyTimeToday": "今日",
+    "historyTimeLast7Days": "直近7日",
+    "historyTimeLast30Days": "直近30日",
     "clearAllHistory": "すべての履歴を削除",
     "historyRecoveredTitle": "クエリ履歴をリセットしました",
     "historyRecoveredBody": "履歴ファイルが破損していたためバックアップに移動しました。新しいクエリは通常どおり記録されます。バックアップ ファイル:",
@@ -210,6 +258,16 @@
     "insertToEditor": "エディタに挿入",
     "openInNewTab": "新しいタブで開く",
     "copyQuery": "クエリをコピー",
+    "copyDetails": "詳細をコピー",
+    "historyDetails": {
+      "database": "データベース",
+      "executed": "実行日時",
+      "duration": "所要時間",
+      "rowsAffected": "影響を受けた行",
+      "status": "ステータス",
+      "success": "成功",
+      "error": "エラー"
+    },
     "runQuery": "クエリを実行",
     "dateGroupToday": "今日",
     "dateGroupYesterday": "昨日",
@@ -256,6 +314,11 @@
       "setup": "セットアップ",
       "activity": "アクティビティ",
       "safety": "セーフティ"
+    },
+    "output": {
+      "title": "ツール出力",
+      "formatLabel": "既定の出力形式",
+      "formatDescription": "MCP ツール呼び出しで output_format が指定されていない場合に使用されます。JSON は互換性を維持し、TOON はトークン使用量を削減できます。"
     },
     "safety": {
       "readOnlyTitle": "読み取り専用モード",
@@ -307,6 +370,7 @@
     "deleteTitle": "削除の確認",
     "failConnect": "{{name}} への接続に失敗しました。設定を確認するか、データベースが稼働していることを確認してください。",
     "failDisconnect": "データベースからの切断に失敗しました",
+    "failDelete": "接続の削除に失敗しました",
     "failDuplicate": "接続の複製に失敗しました",
     "connecting": "接続中...",
     "open": "開く",
@@ -505,7 +569,7 @@
     "darkTheme": "ダークテーマ",
     "fontFamily": "フォントファミリー",
     "fonts": {
-      "system": "システム既定",
+      "system": "テーマの既定",
       "systemDesc": "OS の既定フォントを使用します",
       "custom": "カスタムフォント",
       "customPlaceholder": "例: Comic Sans MS",
@@ -516,6 +580,14 @@
     "fontSizeDesc": "アプリケーション全体で使用される基本フォントサイズを調整します (10〜20px)。",
     "preview": "プレビュー",
     "fontPreviewText": "いろはにほへと ちりぬるを わかよたれそ つねならむ",
+    "dataGrid": {
+      "zebraStripes": "交互の行背景",
+      "zebraStripesDesc": "1行おきに背景を網掛けし、横幅の広いテーブルでも行を追いやすくします。",
+      "defaultSortDirection": "デフォルトの並び替え方向",
+      "defaultSortDirectionDesc": "列ヘッダーを初めてクリックしたときの初期並び替え順序。",
+      "sortAscending": "昇順",
+      "sortDescending": "降順"
+    },
     "appearance_general": "一般",
     "appearance_sqlEditor": "SQL エディタ",
     "appearance_editorTheme": "エディタテーマ",
@@ -527,6 +599,8 @@
     "appearance_editorTabSize": "タブサイズ",
     "appearance_editorWordWrap": "ワードラップ",
     "appearance_editorWordWrapDesc": "エディタ内の長い行を横スクロールせず折り返します。",
+    "appearance_editorHighlightInvisibleCharacters": "不可視文字を表示",
+    "appearance_editorHighlightInvisibleCharactersDesc": "SQL内の不可視Unicode文字や紛らわしい文字を強調表示します。",
     "appearance_editorShowLineNumbers": "行番号を表示",
     "appearance_editorShowLineNumbersDesc": "エディタの左端に行番号を表示します。",
     "appearance_editorAcceptSuggestionOnEnter": "Enter で候補を確定",
@@ -536,6 +610,10 @@
     "runStatementUnderCursorDesc": "スクリプトに複数のステートメントがある場合、クエリ選択画面を表示せずにカーソル位置のステートメントを実行します。特定の範囲を実行するにはテキストを選択してください。",
     "safetyConfirmationDelay": "安全確認を遅延",
     "safetyConfirmationDelayDesc": "破壊的なクエリと本番環境への書き込みでは、確認ボタンを5秒間無効にします。",
+    "notifyLongQueries": "長時間のクエリ終了時に通知",
+    "notifyLongQueriesDesc": "Tabularisがバックグラウンドの間にクエリが終了すると、デスクトップ通知を送信します。",
+    "notifyLongQueriesThreshold": "通知しきい値",
+    "notifyLongQueriesThresholdDesc": "この時間以上実行されたクエリのみ通知します。",
     "formatter_title": "SQLフォーマッター",
     "formatter_keywordCase": "キーワードの大文字/小文字",
     "formatter_keywordCaseDesc": "フォーマット後のSQLキーワード（SELECT、FROM、WHERE）の大文字/小文字。",
@@ -550,6 +628,10 @@
     "formatter_linesBetweenQueriesDesc": "SQL文間に挿入する空行の数。",
     "formatter_denseOperators": "演算子を詰める",
     "formatter_denseOperatorsDesc": "演算子の周りのスペースを削除（例：a = 1 → a=1）。",
+    "autocomplete_title": "オートコンプリート",
+    "autocomplete_keywordCase": "キーワードの大文字/小文字",
+    "autocomplete_keywordCaseDesc": "オートコンプリートで挿入されるSQLキーワードの大文字/小文字。",
+    "autocomplete_keywordCaseMatch": "入力に合わせる",
     "editConfigJson": "config.json を編集",
     "editConfigJsonDesc": "生の設定ファイルを直接編集します。変更を反映するには再起動が必要です。",
     "configJsonModal": {
@@ -675,7 +757,7 @@
     "clearLogs": "ログを消去",
     "clearLogsConfirm": "すべてのログを消去してもよろしいですか？",
     "exportLogs": "ログをエクスポート",
-    "exportLogsSuccess": "ログをクリップボードにエクスポートしました",
+    "exportLogsSuccess": "ログをエクスポートしました",
     "noLogs": "ログがありません",
     "refreshLogs": "更新",
     "logLevel": "レベル",
@@ -710,6 +792,11 @@
     "erDiagramDefaultLayout": "デフォルトレイアウト",
     "erDiagramDefaultLayoutDesc": "ER 図のデフォルトのレイアウト方向を選択します",
     "plugins": {
+      "runtimeTitle": "プラグインランタイム",
+      "callTimeout": "呼び出しタイムアウト",
+      "callTimeoutDesc": "Tabularis がプラグインからの単一リクエスト(クエリを含む)の応答を待つ最大時間です。0 で制限を無効にします。各プラグインは個別の設定でこの値を上書きできます。",
+      "shutdownGrace": "シャットダウン猶予",
+      "shutdownGraceDesc": "プラグインを停止する前に、実行中のリクエストが完了するまで Tabularis が待つ時間です（最低 1 秒）。各プラグインは個別の設定でこの値を上書きできます。",
       "title": "プラグイン",
       "overviewTitle": "プラグインセンター",
       "overviewDesc": "拡張機能のインストール、プラグインドライバの管理、実行時設定のコントロールを行います。",
@@ -723,6 +810,7 @@
       "loadingRegistry": "プラグインレジストリを読み込み中...",
       "registryError": "レジストリの読み込みに失敗しました",
       "installed": "インストール済み",
+      "latest": "最新",
       "by": "作成者:",
       "platformNotSupported": "お使いのプラットフォームでは利用できません",
       "update": "更新",
@@ -739,6 +827,13 @@
       "filterAll": "すべて",
       "filterInstalled": "インストール済み",
       "filterUpdates": "アップデート",
+      "kindFilter": "種類で絞り込む",
+      "kindAll": "すべての種類",
+      "kindDrivers": "ドライバー",
+      "kindThemes": "テーマ",
+      "kindTheme": "テーマ",
+      "kindDriver": "ドライバー",
+      "manageThemes": "外観で管理",
       "searchNoResults": "検索に一致するプラグインがありません。",
       "version": "バージョン",
       "requiresVersion": "Tabularis ≥ {{version}} が必要です",
@@ -775,6 +870,14 @@
         "configure": "インタプリタを設定"
       },
       "pluginSettings": {
+        "callTimeout": "呼び出しタイムアウト",
+        "callTimeoutDesc": "このプラグインに限り、グローバルの呼び出しタイムアウトを上書きします。0 で制限を無効化、空欄でグローバル値を継承します。",
+        "callTimeoutPlaceholder": "グローバルを継承 ({{seconds}} 秒)",
+        "callTimeoutInherit": "グローバル値を継承",
+        "shutdownGrace": "シャットダウン猶予",
+        "shutdownGraceDesc": "このプラグインに限り、グローバルのシャットダウン猶予を上書きします（最低 1 秒）。空欄でグローバル値を継承します。",
+        "shutdownGracePlaceholder": "グローバルを継承 ({{seconds}} 秒)",
+        "shutdownGraceInherit": "グローバル値を継承",
         "title": "プラグイン設定",
         "interpreter": "インタプリタ",
         "interpreterDesc": "任意。このプラグインの実行に使用する実行ファイルを指定します (例: macOS/Linux では python3、Windows では python またはフルパス)。空欄の場合はデフォルトが使用されます。",
@@ -819,7 +922,8 @@
       "categories": {
         "editor": "エディタ",
         "navigation": "ナビゲーション",
-        "data_grid": "データグリッド"
+        "data_grid": "データグリッド",
+        "notebook": "ノートブック"
       },
       "runQuery": "クエリを実行",
       "runQueryEditor": "クエリを実行 (エディタ内)",
@@ -831,9 +935,13 @@
       "toggleRightSidebar": "右サイドバーの切り替え",
       "focusTableFilter": "テーブルフィルターにフォーカス",
       "openConnections": "接続を開く",
+      "openSettings": "設定を開く",
+      "conflict": "このショートカットは「{{shortcut}}」と競合しています。",
+      "needsModifier": "Ctrl や Alt などの修飾キーを追加してください。",
       "newConnection": "新規接続",
       "newTab": "新規タブ",
       "closeTab": "タブを閉じる",
+      "reopenClosedTab": "閉じたタブを再度開く",
       "nextPage": "次のページ",
       "prevPage": "前のページ",
       "switchConnection": "接続 1〜9 に切り替え",
@@ -842,14 +950,19 @@
       "pressKeys": "キーの組み合わせを押してください...",
       "notebookRunAll": "すべてのセルを実行",
       "categories_notebook": "ノートブック",
-      "pasteImportClipboard": "クリップボードからインポート",
+      "pasteImportClipboard": "データのインポート",
       "quickNavigator": "クイックナビゲーター",
+      "commandPalette": "コマンドパレット",
       "commandPaletteActions": "アクションを検索",
       "triggerSuggestions": "候補を表示",
+      "editorZoomIn": "エディタ: フォントを拡大",
+      "editorZoomOut": "エディタ: フォントを縮小",
+      "editorZoomReset": "エディタ: フォントサイズをリセット",
       "formatSql": "SQLをフォーマット",
       "refreshTable": "テーブルを更新",
       "extendCellRange": "セル範囲を拡張",
       "jumpToEdge": "グリッドの端へ移動",
+      "jumpToColumn": "列に移動",
       "extendCellRangeToEdge": "セル範囲を端まで拡張",
       "selectRow": "行を選択",
       "selectColumn": "列を選択"
@@ -932,6 +1045,22 @@
     }
   },
   "update": {
+    "badges": {
+      "morePlugins": "他 {{count}} 件 — すべての更新を見るにはプラグインを開いてください",
+      "driverUpdate": "ドライバーの更新があります",
+      "themeUpdate": "テーマの更新があります",
+      "tag": "更新",
+      "driverTooltip": "{{name}} {{version}} が利用可能です。このプラグインは複数の接続で共有されています。プラグイン → 更新 から管理してください。",
+      "core_one": "コアの更新が {{count}} 件あります",
+      "core_other": "コアの更新が {{count}} 件あります",
+      "plugins_one": "プラグインの更新が {{count}} 件あります",
+      "plugins_other": "プラグインの更新が {{count}} 件あります",
+      "coreDetails": "Tabularis {{version}} が利用可能です。「情報」を開いてコアの更新を確認してください。",
+      "pluginDetails_one": "更新可能：{{plugins}}",
+      "pluginDetails_other": "更新可能：{{plugins}}",
+      "toastTitle": "プラグインの更新があります",
+      "openPlugins": "プラグインを開く"
+    },
     "newVersionAvailable": "新しいバージョンが利用可能",
     "version": "バージョン",
     "releaseNotes": "リリースノート",
@@ -969,6 +1098,17 @@
     "configError": "設定で AI プロバイダを構成し、プロンプトを入力してください。"
   },
   "newConnection": {
+    "ssmForwardHint": "{{document}} に解決されます。マネージドノード経由で {{host}}:{{port}} に転送します。転送先アドレスは「一般」タブで変更します。ループバックホストはノード自身を意味します。",
+    "ssmIamHint": "対象と解決されたドキュメントに対する ssm:StartSession 権限が必要です。",
+    "ssmNotAvailable": "AWS SSM はこのドライバーでは利用できません。",
+    "ssmPortRequired": "先に「一般」タブで有効なポートを設定してください。",
+    "ssmProfile": "AWS プロファイル",
+    "ssmRegion": "AWS リージョン",
+    "ssmTarget": "マネージドノード",
+    "ssmTargetRequired": "接続に使用するマネージドノードを入力してください。",
+    "testSsm": "SSM をテスト",
+    "testSsmHint": "実際のポートフォワーディングセッションを開いてすぐに閉じます。データベースには接続しません。",
+    "useSsm": "AWS SSM ポートフォワーディングを使用",
     "titleNew": "新規接続",
     "titleEdit": "接続を編集",
     "subtitle": "データベース接続の設定を構成します",
@@ -978,6 +1118,10 @@
     "dbNameRequired": "データベース名は必須です",
     "connectionUriRequiresKeychain": "接続 URI は OS のキーチェーンに保存する必要があります。「パスワードをキーチェーンに保存」を有効にしてください。",
     "connectionUriRequired": "接続 URI は必須です",
+    "connectionString": "?????",
+    "connectionStringPlaceholder": "?: mysql://user:pass@localhost:3306/db",
+    "connectionStringExample": "???????",
+    "chooseConnectionStringExample": "????",
     "dbType": "データベースの種類",
     "host": "ホスト",
     "port": "ポート",
@@ -993,6 +1137,7 @@
     "loadDatabases": "データベースを読み込み",
     "loadingDatabases": "読み込み中...",
     "selectDatabases": "データベース",
+    "browseMultipleDatabases": "Browse multiple databases on this connection",
     "appearance": "外観",
     "noDatabasesSelected": "少なくとも 1 つのデータベースを選択してください",
     "selectedDatabases": "{{count}} 個のデータベースを選択中",
@@ -1017,6 +1162,7 @@
     "sshKeyPassphrasePlaceholder": "鍵が暗号化されている場合はパスフレーズを入力",
     "allowSshPrompt": "SSHパスワード/PINプロンプトを許可する",
     "saveKeychain": "パスワードをキーチェーンに保存",
+    "secretsStoredInPlainText": "パスワードは接続ファイルに平文で保存されます。",
     "testConnection": "接続テスト",
     "save": "保存",
     "failSave": "接続の保存に失敗しました",
@@ -1026,6 +1172,7 @@
     "manageSshConnections": "SSH 接続を管理",
     "noSshConnections": "利用可能な SSH 接続がありません",
     "sslMode": "SSL モード",
+    "sslUnverifiedRemoteHint": "このモードはサーバー証明書を検証しません。リモートホストでは {{mode}} を使ってください。",
     "enableCleartextPlugin": "クリアテキストパスワードプラグインを有効にする",
     "enableCleartextPluginHint": "mysql_clear_password を使用してパスワードを送信します。Warpgate などのバスティオンで必要です。TLS 接続でのみ使用されます。",
     "enableCleartextPluginTlsRequired": "クリアテキストパスワードプラグインを使用するには、上で強制 TLS モード（Required、Verify CA、または Verify Identity）を選択してください。",
@@ -1078,6 +1225,8 @@
     "allDatabases": "すべてのデータベース",
     "chooseDatabases": "データベースを選択",
     "allDatabasesHint": "接続時にサーバー上のすべてのデータベースが自動的に読み込まれます。サーバーで作成・削除されたデータベースは、この接続を編集しなくても自動的に反映されます。",
+    "defaultDatabase": "デフォルトのデータベース",
+    "defaultDatabaseHint": "新しいクエリタブはこのデータベースを使用します。選択から削除すると、次に選択されているデータベースがデフォルトになります。",
     "selectDatabasesHint": "この接続に含めるデータベースを選択してください。",
     "loadDatabasesHint": "「データベースを読み込む」をクリックすると利用可能なデータベースを取得します。"
   },
@@ -1119,8 +1268,15 @@
     "placeholder": "PINまたはパスフレーズ",
     "waiting": "セキュリティキーを待っています — タッチして確認してください。"
   },
+  "dateInput": {
+    "useShownValue": "この値を使用"
+  },
   "dataGrid": {
+    "jumpToColumn": "列に移動",
+    "searchColumns": "列を検索",
+    "noMatchingColumns": "一致する列がありません",
     "noRowIdentity": "行を編集できません: \"{{table}}\" には主キーがないため、編集には結果にテーブルの全列が含まれている必要があります。すべての列を選択する(例: SELECT *)か、主キーを追加してください。",
+    "resizeRelatedPanel": "ドラッグしてパネルのサイズを変更",
     "keylessRowNotFound": "\"{{column}}\" の更新時に元の値に一致する行が見つかりませんでした。テーブルに主キーがなく、データが変更された可能性があります。再読み込みして再試行してください。",
     "keylessDeleteNotFound": "削除時に元の値に一致する行が見つかりませんでした。テーブルに主キーがなく、データが変更された可能性があります。再読み込みして再試行してください。",
     "noData": "表示するデータがありません",
@@ -1158,6 +1314,22 @@
     "copyColumnName": "カラム名をコピー",
     "copyColumnNameQuoted": "`column` 形式でコピー",
     "copyColumnNameTable": "table.column 形式でコピー",
+    "copyColumnNames": "カラム名をコピー",
+    "copyColumnNamesLines": "1行に1つ",
+    "copyColumnNamesJson": "JSON配列として",
+    "copiedColumnNames_one": "{{count}} 個のカラム名をクリップボードにコピーしました",
+    "copiedColumnNames_other": "{{count}} 個のカラム名をクリップボードにコピーしました",
+    "copyColumnValuesIn": "列の値を SQL IN としてコピー",
+    "filterByValue": "この値でフィルター",
+    "filterEquals": "等しい",
+    "filterNotEquals": "等しくない",
+    "filterIsNull": "NULL",
+    "filterIsNotNull": "NULL 以外",
+    "filterGreaterThan": "より大きい",
+    "filterGreaterOrEqual": "以上",
+    "filterLessThan": "より小さい",
+    "filterLessOrEqual": "以下",
+    "filterContains": "含む",
     "copyCells": "{{count}} 個のセルをコピー",
     "copyRows": "{{count}} 行をコピー",
     "copied": "クリップボードにコピーしました",
@@ -1169,6 +1341,7 @@
     "setDefault": "DEFAULT に設定",
     "setEmpty": "EMPTY に設定",
     "setServerNow": "現在のタイムスタンプを挿入",
+    "setRandomUuid": "ランダムな UUID を設定",
     "previewReferenced": "関連レコードをプレビュー",
     "openReferenced": "{{table}} で参照行を開く",
     "revealCell": "セルを表示",
@@ -1236,6 +1409,13 @@
     "newRow": "新規行",
     "editing": "編集中: {{table}}",
     "rowsRetrieved": "{{count}} 行を取得しました",
+    "columnsCount_one": "{{count}} 列",
+    "columnsCount_other": "{{count}} 列",
+    "timing": {
+      "execution": "実行",
+      "fetch": "取得",
+      "total": "合計"
+    },
     "queryExecuted": "クエリが正常に実行されました",
     "rowsAffected": "{{count}} 行に影響",
     "autoPaginated": "自動ページング",
@@ -1255,7 +1435,10 @@
       "reattach": "元に戻す"
     },
     "tableRunPrompt": "Run (Ctrl/Command+F5) を押してテーブルデータを読み込んでください",
+    "renameTab": "名前を変更",
+    "duplicateTab": "タブを複製",
     "closeTab": "タブを閉じる",
+    "reopenClosedTab": "閉じたタブを再度開く",
     "closeOthers": "他のタブを閉じる",
     "closeRight": "右側のタブを閉じる",
     "closeLeft": "左側のタブを閉じる",
@@ -1296,11 +1479,18 @@
     "rollback": "ロールバック",
     "pendingCount": "保留中 {{count}}件",
     "executingQuery": "クエリを実行中...",
+    "transactionOpen": "TX",
+    "transactionOpenHint": "トランザクション実行中 — このタブは COMMIT または ROLLBACK まで接続を保持します",
     "exporting": "エクスポート中...",
     "rowsProcessed": "処理行数",
     "exportLoadedRowsWarning": "合計 {{total}} 行のうち、読み込み済みの {{loaded}} 行のみをエクスポートしました。さらに多くの行が必要な場合は、結果をページ送りするか、より絞り込んだクエリを実行してからエクスポートしてください。",
     "queryParameters": "クエリパラメータ",
     "formatSql": "SQLをフォーマット",
+    "selectCurrentStatement": "現在のステートメントを選択",
+    "convertSelectionToSqlList": "選択範囲をSQLリストに変換",
+    "transformToUppercase": "大文字に変換",
+    "transformToLowercase": "小文字に変換",
+    "removeInvisibleCharacters": "貼り付けた文字をクリーンアップ",
     "convertToConsole": "コンソールに変換",
     "parameters": "パラメータ",
     "paramValuePlaceholder": "値 (例: 'text' や 123)",
@@ -1451,6 +1641,7 @@
       "addSqlCell": "SQL セルを追加",
       "addMarkdownCell": "Markdown セルを追加",
       "addCell": "追加",
+      "resizeResult": "結果のサイズを変更",
       "runAll": "すべて実行",
       "runAllTooltip": "上から下へすべての SQL セルを実行",
       "runCell": "セルを実行",
@@ -1572,6 +1763,14 @@
       "collapseAll": "すべて折りたたむ",
       "expandAll": "すべて展開",
       "collapsed": "折りたたみ中"
+    },
+    "queryNotification": {
+      "successTitle": "クエリが完了しました",
+      "errorTitle": "クエリが失敗しました",
+      "body": "{{tab}} · {{duration}}",
+      "batchSuccessTitle": "すべて実行が完了しました",
+      "batchErrorTitle": "すべて実行がエラーで完了しました",
+      "batchBody": "{{tab}} · 成功 {{succeeded}} 件、失敗 {{failed}} 件 · {{duration}}"
     }
   },
   "createTable": {
@@ -1603,6 +1802,7 @@
     "colType": "タイプ",
     "colNullable": "NULL 許可",
     "colKey": "キー",
+    "colDescription": "説明",
     "yes": "はい",
     "no": "いいえ"
   },
@@ -1676,6 +1876,7 @@
     "exitFullscreen": "フルスクリーンを終了",
     "noConnection": "接続 ID がありません",
     "noConnectionDesc": "接続 ID がないため、図を表示できません。",
+    "loadError": "図の読み込みに失敗しました: {{message}}",
     "switchToVertical": "垂直レイアウトに切り替え",
     "switchToHorizontal": "水平レイアウトに切り替え",
     "lockNodes": "ノードの位置を固定",
@@ -1745,7 +1946,13 @@
     "createSuccess": "トリガーを正常に作成しました",
     "updateSuccess": "トリガーを正常に更新しました",
     "recreateTrigger": "トリガーを再作成",
-    "confirmRecreate": "トリガーを編集するには、いったん削除して再作成する必要があります。「{{trigger}}」の変更を続行しますか？"
+    "confirmRecreate": "トリガーを編集するには、いったん削除して再作成する必要があります。「{{trigger}}」の変更を続行しますか？",
+    "functionNameCollision": "A function named \"{{name}}\" already exists. Rename the trigger or drop the function first.",
+    "originalRestored": "元のトリガーを復元しました。",
+    "restoreFailed": "元のトリガーの復元にも失敗しました：",
+    "singleEventHint": "このデータベースでは、1つのトリガーにつき1つのイベントのみ指定できます。",
+    "existingFunctionHint": "このトリガーは既存の関数をそのまま使用します。関数自体はSQLエディタまたはRaw SQLモードで編集してください。",
+    "unsupportedDriver": "このドライバーではトリガーの編集はサポートされていません。"
   },
   "community": {
     "title": "コミュニティに参加",
@@ -1828,7 +2035,9 @@
     "expand": "展開する"
   },
   "contextMenu": {
-    "openSidebar": "サイドバーエディタで開く"
+    "openSidebar": "サイドバーエディタで開く",
+    "openLink": "リンクを開く",
+    "openLinkFailed": "リンクを開けませんでした: {{error}}"
   },
   "blobInput": {
     "noData": "BLOB データなし",
@@ -1944,10 +2153,17 @@
     "noDatabase": "データベースなし"
   },
   "clipboardImport": {
-    "title": "クリップボードからインポート",
-    "subtitle": "構造化データを貼り付け、インポート前にスキーマをプレビューします",
+    "fileReadError": "ファイルを読み込めませんでした",
+    "fileNotFile": "通常のファイルを選択してください。",
+    "fileUnsupported": "CSV、TSV、JSON、Markdown ファイルを選択してください。",
+    "fileTooLarge": "ファイルが 20 MiB を超えています。小さいファイルを選択してください。",
+    "fileHint": "CSV、TSV、JSON 配列、Markdown テーブル。最大ファイルサイズ: 20 MiB。",
+    "fileSource": "ファイルを選択...",
+    "clipboardSource": "クリップボード",
+    "title": "データのインポート",
+    "subtitle": "クリップボードまたはファイルから構造化データを読み込み、インポート前に確認します",
     "selectTablePlaceholder": "テーブルを選択...",
-    "contextMenuLabel": "クリップボードからインポート...",
+    "contextMenuLabel": "データのインポート...",
     "firstRowHeader": "最初の行をヘッダーとして扱う",
     "tableName": "テーブル名",
     "tableNamePlaceholder": "例: sales_data",
@@ -1971,7 +2187,7 @@
     "success": "{{count}} 行を「{{table}}」にインポートしました",
     "tableCreated": "新規テーブルを作成しました",
     "openTable": "閉じる",
-    "noData": "クリップボードにデータが見つかりません",
+    "noData": "選択したソースにデータが見つかりません",
     "retry": "再試行",
     "warningsCount": "{{count}} 件の解析警告",
     "columnsLabel": "カラム",
@@ -2149,7 +2365,6 @@
     "outputParameter": "出力パラメータ — 結果として返されます",
     "rawLabel": "Raw",
     "rawHint": "文字列クォートなしでそのまま挿入します（数値・式）",
-    "runButton": "実行",
     "runTabPrefix": "実行",
     "returnValue": "戻り値"
   },
@@ -2171,7 +2386,9 @@
     "commands": {
       "openSettings": "設定を開く",
       "openConnections": "接続マネージャーを開く",
-      "openTableInConsole": "現在のテーブルをSQLコンソールで開く"
+      "openTableInConsole": "現在のテーブルをSQLコンソールで開く",
+      "toggleWordWrapEnable": "折り返しを有効にする",
+      "toggleWordWrapDisable": "折り返しを無効にする"
     }
   },
   "pagination": {
@@ -2332,6 +2549,10 @@
       "summary": "SSH トンネルに失敗しました",
       "recovery": "SSH タブの設定を確認してください。"
     },
+    "ssm": {
+      "summary": "AWS SSM セッションに失敗しました",
+      "recovery": "詳細を開いて正確な AWS のエラーを確認してください。AWS CLI と Session Manager プラグインがインストールされていること、認証情報が有効であること、マネージドノードがオンラインであることを確認してください。"
+    },
     "db-auth": {
       "summary": "データベース認証に失敗しました",
       "recovery": "データベースのユーザー名とパスワードを確認してください。"
@@ -2369,6 +2590,11 @@
         "ok": "ポートフォワードの準備ができました",
         "error": "Kubernetes ポートフォワードに失敗しました"
       },
+      "ssmForward": {
+        "start": "AWS SSM ポートフォワーディングを開始しています",
+        "ok": "ポートフォワーディングの準備ができました",
+        "error": "AWS SSM ポートフォワーディングに失敗しました"
+      },
       "dbConnect": {
         "start": "データベースに接続しています",
         "ok": "データベース接続が確立されました",
@@ -2377,5 +2603,13 @@
     },
     "title": "接続テストのログ",
     "showLog": "ログを表示"
+  },
+  "themePackages": {
+    "import": "テーマをインポート",
+    "registryMismatch": "このパッケージは別のレジストリのものです。更新する前に、設定済みのレジストリを明示的に変更してください。",
+    "importedTheme": "インポートしたテーマ", "manage": "テーマを管理", "importJSON": "Tabularis JSON をインポート", "importVSCode": "VS Code からインポート", "edit": "個人テーマを編集", "localPackage": "ローカルパッケージ", "installTitle": "テーマパッケージをインストール", "installSubtitle": "設定済みレジストリの宣言的テーマです。コードは実行されません。", "discover": "プラグインでテーマを探す", "refresh": "再読み込み", "preview": "プレビュー", "apply": "適用", "confirm": "確認", "duplicate": "個人テーマとして複製", "exportJSON": "単独 JSON をエクスポート", "exportPackage": "作者用パッケージをエクスポート", "remove": "削除", "update": "パッケージを更新", "disable": "パッケージを無効化", "enable": "パッケージを有効化", "removePackage": "パッケージをアンインストール", "disabled": "無効", "file": "テーマファイル", "name": "テーマ名", "mode": "モード / ベース", "detectMode": "自動検出（不明な場合は選択）", "source": "テーマ JSON", "search": "テーマを検索", "loading": "読み込み中…", "noThemes": "このレジストリに利用可能なテーマはありません。", "details": "詳細 / インストール", "readme": "README / スクリーンショット", "version": "パッケージのバージョン", "latest": "最新リリース", "install": "パッケージをインストール / 置換", "chooseArchive": "ZIP アーカイブを選択", "screenshots": "スクリーンショット（外部で開く）", "externalMedia": "画像などのリモートメディアは自動的に読み込みません。リンクはブラウザーで開きます。", "snapshotEditor": "エディターの正確な JSON", "snapshotEditorHelp": "この独立したスナップショットが旧形式のエイリアスに代わって SQL の色を制御します。変更はプレビューされ、元のリビジョンを確認して保存されます。", "recover": "中断されたインストールを復旧", "recoveryExplanation": "未完了のテーマ操作を明示的に確認して復旧します。中断されたインストールを復元する場合がありますが、テーマの選択や保存済み設定の変更は行いません。", "recoveryDone": "復旧の確認が完了しました。残っている問題は以下をご確認ください。", "catalogIssues": "カタログ診断", "fileTooLarge": "ファイルがインポートの容量制限を超えています。", "previewHint": "プレビューは一時的です。キャンセルで保存済みテーマに戻り、適用で選択を保存します。", "previewReady": "プレビュー中です。確認前にアプリとエディターを確認してください。", "licenseNotice": "インポートやエクスポートで再配布権は付与されません。公開前に帰属表示を保持し、ライセンスを確認してください。", "acknowledge": "上記の変換制限を理解し、受け入れます。", "applyAfterSave": "保存後に適用", "savedNotApplied": "テーマは保存されましたが、選択に失敗しました。再インポートせず、保存済みテーマを選択してください。", "installHint": "インストールはパッケージ全体を置換しますが、バリアントは選択しません。プレビュー、ローカルインポート、選択はダウンロード数に含まれません。", "installedHint": "インストール済みです。閉じて外観設定でバリアントを選択してください。", "committedRefreshFailed": "操作は完了しましたが、カタログ更新に失敗しました。再試行前に再読み込みしてください。", "missing": "保存済みの選択が利用できません: {{id}}。設定を変更せずオフラインテーマを使用します。", "downloads": "ダウンロード数: {{count}}", "downloadsUnavailable": "ダウンロード数を取得できません", "installedVersion": "インストール済み: {{version}}", "minimumVersion": "Tabularis {{version}} 以降が必要", "incompatible": "互換性がないか、ユニバーサルアーカイブが一つだけではありません。", "packageWarning": "パッケージのすべてのバリアントに影響します。保存済みの選択は保持され、再び利用可能になると復元されます。", "deleteWarning": "個人テーマを削除しますか？保存済みのアプリ選択は既定のテーマになります。", "duplicateHint": "独立した編集可能な個人コピーを作成します。自動適用はしません。", "exportError": "パッケージのエクスポートに失敗しました。単独 JSON は引き続きエクスポートできます。", "runtimeWarning": "実際に初めて対応したリリースを入力してください。開発版の番号は旧クライアントとの互換性を保証しません。", "packageName": "パッケージ識別子（小文字）", "minimumRuntime": "Tabularis の最小バージョン", "license": "ライセンスと帰属表示", "rightsAcknowledged": "再配布権と帰属表示を確認しました。",
+    "groups": { "builtin": "内蔵 · オフライン", "installed": "インストール済みパッケージ", "personal": "個人テーマ" }, "modes": { "light": "ライト", "dark": "ダーク", "high-contrast": "ハイコントラスト" },
+    "importErrors": { "unrecognized": "VS Code テーマとして認識できません。", "modeRequired": "モードを選択して再度プレビューしてください。", "includeOnly": "include のみのテーマはインポートできません。実際の色データを指定してください。", "noSupportedData": "対応する色や SQL トークン規則がありません。", "invalidColor": "対応する色の値が無効です。", "invalidRules": "トークン規則が無効または多すぎます。" },
+    "diagnostics": { "unsupportedKey": "非対応のフィールド", "unsupportedColor": "非対応の色", "unsupportedScope": "非対応のスコープ", "scopeApproximation": "近似的な SQL スコープ変換", "unsupportedStyle": "非対応のスタイル", "ignoredInclude": "include は読み込まれません", "ignoredSemanticTokens": "セマンティックトークンを無視", "unsupportedReference": "外部参照は読み込まれません", "unsupportedSetting": "非対応の設定", "tokenAlphaFlattened": "トークンの不透明度を基本背景に合成", "modeApproximation": "モードを上書きまたは近似", "diagnosticsTruncated": "追加の診断を省略" }
   }
 }

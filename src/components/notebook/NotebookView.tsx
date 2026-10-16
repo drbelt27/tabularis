@@ -103,6 +103,7 @@ export function NotebookView({
     tab.schema || activeSchema || (isMultiDb ? selectedDatabases[0] : null);
   useSqlAutocompleteRegistration(connectionId, {
     schema: effectiveSchema,
+    database: tab.database,
     enabled: isActive,
   });
   const { settings } = useSettings();
@@ -847,8 +848,8 @@ export function NotebookView({
         placement === "top" ? "-top-1.5" : "-bottom-1.5"
       } left-0 right-0 z-10 flex items-center gap-1`}
     >
-      <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)]" />
-      <span className="h-0.5 flex-1 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)]" />
+      <span className="h-2 w-2 shrink-0 rounded-full bg-accent-primary shadow-[0_0_6px_var(--accent-primary)]" />
+      <span className="h-0.5 flex-1 rounded-full bg-accent-primary shadow-[0_0_6px_var(--accent-primary)]" />
     </div>
   );
 

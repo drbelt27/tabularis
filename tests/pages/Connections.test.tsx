@@ -1,24 +1,30 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Connections } from "../../src/pages/Connections";
+import { invoke } from "@tauri-apps/api/core";
+import type { SavedConnection } from "../../src/contexts/DatabaseContext";
 
 const mocks = vi.hoisted(() => ({
   connect: vi.fn(),
   connectionGroups: [],
-  connections: [],
+  connections: [] as SavedConnection[],
   createSqliteDatabase: vi.fn(),
   drivers: [],
   loadConnections: vi.fn(),
   navigate: vi.fn(),
   openConnectionInNewWindow: vi.fn(),
+  reorderConnectionsInGroup: vi.fn(),
   settings: { autoConnectLastConnection: false },
+  isSettingsLoading: false,
 }));
 
-vi.mock("lucide-react", () => ({
+vi.mock("lucide-react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("lucide-react")>()),
   AlertCircle: () => null,
   AppWindow: () => null,
   ChevronDown: () => null,
   ChevronRight: () => null,
+  Check: () => null,
   Database: () => null,
   Download: () => null,
   Edit: () => null,
@@ -54,6 +60,7 @@ vi.mock("../../src/hooks/useDatabase", () => ({
     moveGroupToParent: vi.fn(),
     deleteGroup: vi.fn(),
     moveConnectionToGroup: vi.fn(),
+    reorderConnectionsInGroup: mocks.reorderConnectionsInGroup,
     reorderGroups: vi.fn(),
     toggleGroupCollapsed: vi.fn(),
     loadConnections: mocks.loadConnections,
@@ -65,8 +72,12 @@ vi.mock("../../src/hooks/useDrivers", () => ({
   useDrivers: () => ({ drivers: mocks.drivers, allDrivers: mocks.drivers, installedPlugins: [] }),
 }));
 
+vi.mock("../../src/hooks/usePluginRegistry", () => ({
+  usePluginRegistry: () => ({ plugins: [], updates: [], loading: false, error: null, refresh: vi.fn() }),
+}));
+
 vi.mock("../../src/hooks/useSettings", () => ({
-  useSettings: () => ({ settings: mocks.settings }),
+  useSettings: () => ({ settings: mocks.settings, isLoading: mocks.isSettingsLoading }),
 }));
 
 vi.mock("../../src/hooks/useConnectionTags", () => ({
@@ -126,7 +137,8 @@ vi.mock("../../src/components/modals/NewConnectionModal", () => ({
 }));
 
 vi.mock("../../src/components/modals/ConfirmModal", () => ({
-  ConfirmModal: () => null,
+  ConfirmModal: ({ isOpen, onConfirm }: { isOpen: boolean; onConfirm: () => void }) =>
+    isOpen ? <button onClick={onConfirm}>confirm-modal-confirm</button> : null,
 }));
 
 vi.mock("../../src/components/modals/ExportConnectionsModal", () => ({
@@ -149,6 +161,9 @@ const sqliteConnection = {
 describe("Connections SQLite database action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.connections = [];
+    mocks.isSettingsLoading = false;
+    mocks.settings.autoConnectLastConnection = false;
     mocks.connect.mockResolvedValue(undefined);
     mocks.createSqliteDatabase.mockResolvedValue(sqliteConnection);
     mocks.loadConnections.mockResolvedValue(undefined);
@@ -187,5 +202,95 @@ describe("Connections SQLite database action", () => {
       await screen.findByText("connections.newSqliteDatabase.error"),
     ).toBeInTheDocument();
     expect(mocks.connect).not.toHaveBeenCalled();
+  });
+
+  it("waits for persisted settings before deciding whether to restore a session", async () => {
+    mocks.connections = [sqliteConnection];
+    mocks.settings.autoConnectLastConnection = true;
+    mocks.isSettingsLoading = true;
+    const { rerender } = render(<Connections />);
+    expect(invoke).not.toHaveBeenCalledWith("get_last_open_connections");
+    // The actual setting disables restore; the default must never win the race.
+    mocks.settings.autoConnectLastConnection = false;
+    mocks.isSettingsLoading = false;
+    rerender(<Connections />);
+    expect(invoke).not.toHaveBeenCalledWith("get_last_open_connections");
+    expect(mocks.connect).not.toHaveBeenCalled();
+  });
+});
+
+describe("Connections ordering", () => {
+  const conn = (id: string, sort_order?: number) =>
+    ({
+      id,
+      name: id,
+      params: { driver: "sqlite", database: `/tmp/${id}.db` },
+      sort_order,
+    }) as SavedConnection;
+  const card = (id: string) =>
+    document.querySelector(`[data-connection-id="${id}"]`) as HTMLElement;
+  const renderedIds = () =>
+    [...document.querySelectorAll("[data-connection-id]")].map((el) =>
+      el.getAttribute("data-connection-id"),
+    );
+  const originalElementFromPoint = document.elementFromPoint;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.settings.autoConnectLastConnection = false;
+    mocks.isSettingsLoading = false;
+    mocks.reorderConnectionsInGroup.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    document.elementFromPoint = originalElementFromPoint;
+  });
+
+  it("lists connections without a sort order after ordered ones", () => {
+    mocks.connections = [conn("fresh"), conn("b", 1), conn("a", 0)];
+    render(<Connections />);
+    expect(renderedIds()).toEqual(["a", "b", "fresh"]);
+  });
+
+  it("moves a connection into the slot of the sibling it is dropped on", async () => {
+    mocks.connections = [conn("a", 0), conn("b", 1), conn("c", 2)];
+    render(<Connections />);
+    document.elementFromPoint = vi.fn(() => card("c"));
+
+    fireEvent.mouseDown(card("a"), { button: 0, clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 40, clientY: 40 });
+    fireEvent.mouseUp(document, { clientX: 40, clientY: 40 });
+
+    await waitFor(() =>
+      expect(mocks.reorderConnectionsInGroup).toHaveBeenCalledWith([
+        ["b", 0],
+        ["c", 1],
+        ["a", 2],
+      ]),
+    );
+  });
+});
+
+describe("Connections delete", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.settings.autoConnectLastConnection = false;
+    mocks.isSettingsLoading = false;
+    mocks.connections = [sqliteConnection as SavedConnection];
+  });
+
+  it("shows the backend error when a delete fails instead of failing silently", async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === "delete_connection") {
+        throw "Failed to read the stored connection URI from the OS keychain";
+      }
+      return undefined;
+    });
+    render(<Connections />);
+
+    fireEvent.click(screen.getAllByTitle("connections.delete")[0]);
+    fireEvent.click(screen.getByText("confirm-modal-confirm"));
+
+    expect(await screen.findByText(/connections\.failDelete/)).toBeInTheDocument();
   });
 });

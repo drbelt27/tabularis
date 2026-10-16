@@ -16,6 +16,7 @@ import { groupIndexes } from "../../../utils/indexes";
 import type { TableColumn, Index } from "../../../types/schema";
 import type { ContextMenuData } from "../../../types/sidebar";
 import type { DriverCapabilities } from "../../../types/plugins";
+import { onActivationKey } from "../../../utils/keyboardEvents";
 
 interface SidebarViewItemProps {
   view: { name: string };
@@ -35,6 +36,7 @@ interface SidebarViewItemProps {
    * `SidebarColumnItem`, which prefers it over the bare `driver` id. */
   capabilities?: DriverCapabilities | null;
   schema?: string;
+  database?: string;
   materialized?: boolean;
   isRefreshing?: boolean;
 }
@@ -49,6 +51,7 @@ export const SidebarViewItem = ({
   driver,
   capabilities,
   schema,
+  database,
   materialized = false,
   isRefreshing = false,
 }: SidebarViewItemProps) => {
@@ -72,6 +75,7 @@ export const SidebarViewItem = ({
             connectionId,
             viewName: view.name,
             ...(schema ? { schema } : {}),
+            ...(database ? { database } : {}),
           },
         ),
         // Materialized views can carry indexes (regular views cannot).
@@ -80,6 +84,7 @@ export const SidebarViewItem = ({
             connectionId,
             tableName: view.name,
             ...(schema ? { schema } : {}),
+            ...(database ? { database } : {}),
           })
           : Promise.resolve([] as Index[]),
       ]);
@@ -90,7 +95,7 @@ export const SidebarViewItem = ({
     } finally {
       setIsLoading(false);
     }
-  }, [connectionId, view.name, schema, materialized]);
+  }, [connectionId, view.name, schema, database, materialized]);
 
   useEffect(() => {
     if (isExpanded) {
@@ -106,7 +111,7 @@ export const SidebarViewItem = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onContextMenu(e, materialized ? "materialized_view" : "view", view.name, view.name, { tableName: view.name, schema });
+    onContextMenu(e, materialized ? "materialized_view" : "view", view.name, view.name, { tableName: view.name, schema, database });
   };
 
   const groupedIndexes = React.useMemo(() => groupIndexes(indexes), [indexes]);
@@ -114,11 +119,14 @@ export const SidebarViewItem = ({
   return (
     <div className="flex flex-col">
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => onViewClick(view.name)}
+        onKeyDown={onActivationKey(() => onViewClick(view.name))}
         onDoubleClick={() => onViewDoubleClick(view.name)}
         onContextMenu={handleContextMenu}
         className={clsx(
-          "flex items-center gap-1 pl-1 pr-3 py-1.5 text-sm cursor-pointer group select-none transition-colors border-l-2",
+          "flex items-center gap-1 pl-1 pr-3 py-1.5 text-sm cursor-pointer group select-none transition-colors border-l-2 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
           activeView === view.name
             ? "bg-[color-mix(in_srgb,var(--accent-secondary)_20%,transparent)] text-accent-secondary border-(--accent-secondary)"
             : "text-secondary hover:bg-surface-secondary border-transparent hover:text-primary",
@@ -126,6 +134,8 @@ export const SidebarViewItem = ({
       >
         <button
           onClick={handleExpand}
+          aria-label={isExpanded ? t("sidebar.collapseView", { name: view.name }) : t("sidebar.expandView", { name: view.name })}
+          aria-expanded={isExpanded}
           className="p-0.5 rounded hover:bg-surface-secondary text-muted hover:text-primary transition-colors"
         >
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -159,7 +169,7 @@ export const SidebarViewItem = ({
               <div
                 className="flex items-center gap-2 px-2 py-1 text-xs text-muted select-none"
               >
-                <Folder size={12} className="text-blue-400/70" />
+                <Folder size={12} className="text-accent/70" />
                 <span>{t("sidebar.columns")}</span>
                 <span className="ml-auto text-[10px] opacity-50">
                   {columns.length}
@@ -177,6 +187,8 @@ export const SidebarViewItem = ({
                     onRefresh={refreshColumns}
                     onEdit={() => {}}
                     isView={true}
+                    schema={schema}
+                    database={database}
                   />
                 ))}
               </div>

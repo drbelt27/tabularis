@@ -21,6 +21,8 @@ interface VisualExplainModalProps {
   query: string;
   connectionId: string;
   schema?: string;
+  /** Database name for a schema-based multi-db connection (see Tab.database). */
+  database?: string;
   /// Display label to use when the connection isn't loaded in the active
   /// database context (e.g. opened from the AI Activity panel). Falls back
   /// to the live connection name if available, then to `connectionId`.
@@ -35,6 +37,7 @@ export const VisualExplainModal = ({
   query,
   connectionId,
   schema,
+  database,
   connectionLabel,
   viewState,
 }: VisualExplainModalProps) => {
@@ -71,7 +74,7 @@ export const VisualExplainModal = ({
   const resolvedConnectionLabel =
     connectionData?.connectionName ?? connectionLabel ?? connectionId;
   const schemaLabel = schema ?? connectionData?.activeSchema ?? null;
-  const databaseLabel = connectionData?.databaseName ?? schema ?? "";
+  const databaseLabel = database ?? connectionData?.databaseName ?? schema ?? "";
   const locationLabel =
     schemaLabel && schemaLabel !== databaseLabel
       ? `${databaseLabel} / ${schemaLabel}`
@@ -92,22 +95,22 @@ export const VisualExplainModal = ({
       await Promise.resolve();
       if (cancelled) return;
       setViewMode("graph");
-      await runExplain({ connectionId, query, analyze: analyzeRef.current, schema });
+      await runExplain({ connectionId, query, analyze: analyzeRef.current, schema, database });
     };
     void explain();
     return () => {
       cancelled = true;
       invalidate();
     };
-  }, [isOpen, hasExternalPlan, query, connectionId, schema, runExplain, setViewMode, invalidate]);
+  }, [isOpen, hasExternalPlan, query, connectionId, schema, database, runExplain, setViewMode, invalidate]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="bg-elevated border border-strong rounded-xl shadow-2xl w-[90vw] h-[85vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-default bg-base">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-900/30 rounded-lg">
-              <Network size={20} className="text-green-400" />
+            <div className="p-2 bg-accent-success/15 rounded-lg">
+              <Network size={20} className="text-accent-success" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-primary">
@@ -177,9 +180,9 @@ export const VisualExplainModal = ({
 
           {!hasExternalPlan && (
             <button
-              onClick={() => runExplain({ connectionId, query, analyze, schema })}
+              onClick={() => runExplain({ connectionId, query, analyze, schema, database })}
               disabled={isLoading || !query.trim() || !connectionId}
-              className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-accent-success hover:bg-accent-success/90 disabled:opacity-50 text-on-accent-success rounded-lg text-sm font-medium transition-colors"
             >
               <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
               {t("editor.visualExplain.rerun")}

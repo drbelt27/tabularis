@@ -113,6 +113,63 @@ describe('DatabaseProvider', () => {
     vi.restoreAllMocks();
   });
 
+  it('shares concurrent connection-list loads but refreshes on a later call', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
+    vi.mocked(invoke).mockImplementation(async (command) => command === 'get_connections_with_groups'
+      ? { connections: mockConnections, groups: [] } : []);
+    const { result } = renderHook(() => useDatabase(), { wrapper });
+    await act(async () => {
+      await Promise.all([result.current.loadConnections({ ifNeeded: true }), result.current.loadConnections({ ifNeeded: true }), result.current.loadConnections({ ifNeeded: true })]);
+    });
+    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === 'get_connections_with_groups')).toHaveLength(1);
+    await act(async () => { await result.current.loadConnections(); });
+    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === 'get_connections_with_groups')).toHaveLength(2);
+  });
+
+  it('does not reuse or publish a stale bootstrap read after an explicit refresh', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
+    let finishInitial!: (value: { connections: typeof mockConnections; groups: [] }) => void;
+    let reads = 0;
+    vi.mocked(invoke).mockImplementation(async (command) => {
+      if (command !== 'get_connections_with_groups') return [];
+      if (++reads === 1) return new Promise((resolve) => { finishInitial = resolve; });
+      return { connections: [{ ...mockConnections[0], name: 'Updated' }], groups: [] };
+    });
+    const { result } = renderHook(() => useDatabase(), { wrapper });
+    let initial!: Promise<void>;
+    act(() => { initial = result.current.loadConnections({ ifNeeded: true }); });
+    await act(async () => { await result.current.loadConnections(); });
+    expect(reads).toBe(2);
+    expect(result.current.connections[0].name).toBe('Updated');
+    await act(async () => { finishInitial({ connections: mockConnections, groups: [] }); await initial; });
+    expect(result.current.connections[0].name).toBe('Updated');
+  });
+
+  it('keeps the active connection and table when a background restore succeeds or fails', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(DatabaseProvider, null, children);
+    const records = ['active', 'background', 'broken'].map((id) => ({ ...mockConnections[0], id }));
+    vi.mocked(invoke).mockImplementation(async (command, args) => {
+      if (command === 'get_connections') return records;
+      if (command === 'get_driver_manifest') return { ...mockMysqlManifest, capabilities: { ...mockMysqlManifest.capabilities, single_database: true } };
+      if (command === 'test_connection' && (args as { request: { connection_id: string } }).request.connection_id === 'broken') throw new Error('offline');
+      if (command === 'get_tables') return mockTables;
+      if (command === 'get_views') return mockViews;
+      if (command === 'get_routines') return mockRoutines;
+      return [];
+    });
+    const { result } = renderHook(() => useDatabase(), { wrapper });
+    await act(async () => { await result.current.connect('active'); });
+    act(() => result.current.setActiveTable('users'));
+    await act(async () => { await result.current.connect('background', { activate: false }); });
+    expect(result.current.activeConnectionId).toBe('active');
+    expect(result.current.activeTable).toBe('users');
+    expect(result.current.openConnectionIds).toEqual(['active', 'background']);
+    await act(async () => { await expect(result.current.connect('broken', { activate: false })).rejects.toThrow('offline'); });
+    expect(result.current.activeConnectionId).toBe('active');
+    expect(result.current.activeTable).toBe('users');
+    expect(result.current.openConnectionIds).toEqual(['active', 'background']);
+  });
+
   it('should persist empty connection list after connections have been opened', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(DatabaseProvider, null, children);
@@ -239,13 +296,13 @@ describe('DatabaseProvider', () => {
     });
   });
 
-  it('leaves no database active when several are selected', async () => {
-    // With a choice to make, none is picked for the user.
+  it.each([['firstdb', 'seconddb'], ['seconddb', 'firstdb']])('preserves the saved default %s when connecting', async (first, second) => {
+    // The sidebar has no active database, but query tabs use the saved order.
     const twoDbConnection = [
       {
         id: 'conn-two',
         name: 'Two DB MySQL',
-        params: { driver: 'mysql', host: 'localhost', database: ['firstdb', 'seconddb'] },
+        params: { driver: 'mysql', host: 'localhost', database: [first, second] },
       },
     ];
 
@@ -273,8 +330,9 @@ describe('DatabaseProvider', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.selectedDatabases).toEqual(['firstdb', 'seconddb']);
+      expect(result.current.selectedDatabases).toEqual([first, second]);
       expect(result.current.activeSchema).toBeNull();
+      expect(invoke).toHaveBeenCalledWith('get_tables', { connectionId: 'conn-two', schema: first });
     });
   });
 
@@ -874,5 +932,220 @@ describe('DatabaseProvider', () => {
         expect(result.current.needsSchemaSelection).toBe(false);
       });
     });
+  });
+
+  describe('PostgreSQL Nested Multi-Database Selection', () => {
+    // An array `database` (as opposed to a plain string) is the explicit
+    // opt-in signal for a schema-based multi-db connection — see
+    // hasOptedIntoDatabaseSelection. This is what NewConnectionModal now
+    // persists when the user picks 2+ databases via the Databases tab.
+    const mockNestedPgConnections = [
+      {
+        id: 'pg-nested-conn',
+        name: 'Multi-DB Postgres',
+        params: {
+          driver: 'postgres',
+          host: 'localhost',
+          database: ['analytics', 'reporting'],
+        },
+      },
+    ];
+
+    const mockSchemas = ['public', 'internal'];
+    const mockPgTables = [{ name: 'events' }];
+    const mockPgViews = [{ name: 'daily_totals' }];
+    const mockPgRoutines = [{ name: 'refresh_totals', routine_type: 'PROCEDURE' }];
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(DatabaseProvider, null, children);
+
+    it('pre-loads the first database\'s schemas and tables into nestedDatabaseDataMap', async () => {
+      vi.mocked(invoke).mockImplementation((cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === 'get_connections') return Promise.resolve(mockNestedPgConnections);
+        if (cmd === 'test_connection') return Promise.resolve('Connection successful!');
+        if (cmd === 'get_driver_manifest') return Promise.resolve(mockPostgresManifest);
+        if (cmd === 'get_available_databases') return Promise.resolve(['analytics', 'reporting']);
+        if (cmd === 'get_schemas') {
+          expect(args).toMatchObject({ database: 'analytics' });
+          return Promise.resolve(mockSchemas);
+        }
+        if (cmd === 'get_selected_schemas') return Promise.resolve(['public']);
+        if (cmd === 'get_schema_preference') return Promise.resolve('public');
+        if (cmd === 'get_tables') {
+          expect(args).toMatchObject({ schema: 'public', database: 'analytics' });
+          return Promise.resolve(mockPgTables);
+        }
+        if (cmd === 'get_views') return Promise.resolve(mockPgViews);
+        if (cmd === 'get_routines') return Promise.resolve(mockPgRoutines);
+        if (cmd === 'set_window_title') return Promise.resolve(undefined);
+        if (cmd === 'disconnect_connection') return Promise.resolve(undefined);
+        return Promise.resolve(undefined);
+      });
+
+      const { result } = renderHook(() => useDatabase(), { wrapper });
+
+      await act(async () => {
+        await result.current.connect('pg-nested-conn');
+      });
+
+      await waitFor(() => {
+        expect(result.current.selectedDatabases).toEqual(['analytics', 'reporting']);
+      });
+
+      const nested = result.current.nestedDatabaseDataMap['analytics'];
+      expect(nested).toBeDefined();
+      expect(nested.schemasLoaded).toBe(true);
+      expect(nested.schemas).toEqual(mockSchemas);
+      expect(nested.selectedSchemas).toEqual(['public']);
+      expect(nested.activeSchema).toBe('public');
+      expect(nested.needsSchemaSelection).toBe(false);
+      expect(nested.schemaDataMap['public']?.tables).toEqual(mockPgTables);
+      expect(nested.schemaDataMap['public']?.isLoaded).toBe(true);
+
+      // The connection-level (non-nested) schema fields must stay untouched —
+      // this connection never takes the plain schema-only branch.
+      expect(result.current.schemas).toEqual([]);
+      expect(result.current.selectedSchemas).toEqual([]);
+      expect(result.current.needsSchemaSelection).toBe(false);
+      expect(result.current.schemaDataMap).toEqual({});
+    });
+
+    it('marks needsSchemaSelection on the nested database when it has no saved schema selection', async () => {
+      vi.mocked(invoke).mockImplementation((cmd: string) => {
+        if (cmd === 'get_connections') return Promise.resolve(mockNestedPgConnections);
+        if (cmd === 'test_connection') return Promise.resolve('Connection successful!');
+        if (cmd === 'get_driver_manifest') return Promise.resolve(mockPostgresManifest);
+        if (cmd === 'get_available_databases') return Promise.resolve(['analytics', 'reporting']);
+        if (cmd === 'get_schemas') return Promise.resolve(mockSchemas);
+        if (cmd === 'get_selected_schemas') return Promise.resolve([]);
+        if (cmd === 'set_window_title') return Promise.resolve(undefined);
+        if (cmd === 'disconnect_connection') return Promise.resolve(undefined);
+        return Promise.resolve(undefined);
+      });
+
+      const { result } = renderHook(() => useDatabase(), { wrapper });
+
+      await act(async () => {
+        await result.current.connect('pg-nested-conn');
+      });
+
+      await waitFor(() => {
+        const nested = result.current.nestedDatabaseDataMap['analytics'];
+        expect(nested?.needsSchemaSelection).toBe(true);
+        expect(nested?.selectedSchemas).toEqual([]);
+      });
+    });
+
+    it('confirming a schema selection on a nested database clears needsSchemaSelection and loads the schema (regression: stale-closure overwrite)', async () => {
+      // Reproduces the reported bug: on a database with no saved schema
+      // selection, checking a schema and clicking "Confirm" called
+      // setSelectedSchemasForDatabase, which immediately triggers
+      // loadNestedSchemaData for the same database. Both used to rebuild
+      // `nestedDatabaseDataMap` from independently stale closures, so the
+      // load's own update clobbered `needsSchemaSelection` back to `true`
+      // right after Confirm had cleared it -- the picker reappeared with
+      // nothing checked and no schema ever loaded.
+      vi.mocked(invoke).mockImplementation((cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === 'get_connections') return Promise.resolve(mockNestedPgConnections);
+        if (cmd === 'test_connection') return Promise.resolve('Connection successful!');
+        if (cmd === 'get_driver_manifest') return Promise.resolve(mockPostgresManifest);
+        if (cmd === 'get_available_databases') return Promise.resolve(['analytics', 'reporting']);
+        if (cmd === 'get_schemas') return Promise.resolve(mockSchemas);
+        if (cmd === 'get_selected_schemas') return Promise.resolve([]);
+        if (cmd === 'get_tables') {
+          expect(args).toMatchObject({ schema: 'public', database: 'analytics' });
+          return Promise.resolve(mockPgTables);
+        }
+        if (cmd === 'get_views') return Promise.resolve(mockPgViews);
+        if (cmd === 'get_routines') return Promise.resolve(mockPgRoutines);
+        if (cmd === 'set_selected_schemas') return Promise.resolve(undefined);
+        if (cmd === 'set_schema_preference') return Promise.resolve(undefined);
+        if (cmd === 'set_window_title') return Promise.resolve(undefined);
+        if (cmd === 'disconnect_connection') return Promise.resolve(undefined);
+        return Promise.resolve(undefined);
+      });
+
+      const { result } = renderHook(() => useDatabase(), { wrapper });
+
+      await act(async () => {
+        await result.current.connect('pg-nested-conn');
+      });
+
+      await waitFor(() => {
+        expect(result.current.nestedDatabaseDataMap['analytics']?.needsSchemaSelection).toBe(true);
+      });
+
+      await act(async () => {
+        await result.current.setSelectedSchemasForDatabase('analytics', ['public'], 'pg-nested-conn');
+      });
+
+      await waitFor(() => {
+        const nested = result.current.nestedDatabaseDataMap['analytics'];
+        expect(nested?.needsSchemaSelection).toBe(false);
+        expect(nested?.selectedSchemas).toEqual(['public']);
+        expect(nested?.activeSchema).toBe('public');
+        expect(nested?.schemaDataMap['public']?.isLoaded).toBe(true);
+        expect(nested?.schemaDataMap['public']?.tables).toEqual(mockPgTables);
+      });
+
+      // The other nested database must be untouched by this call.
+      expect(result.current.nestedDatabaseDataMap['reporting']).toBeUndefined();
+    });
+
+    it(
+      "regression: the database row's Refresh button must force a real re-fetch of the schema " +
+        "list, since schemasLoaded otherwise makes loadNestedSchemas a permanent no-op after " +
+        "the first load — a schema created afterwards (e.g. via the new per-schema console) " +
+        "would never appear no matter how many times Refresh was clicked",
+      async () => {
+        let schemaListCallCount = 0;
+        vi.mocked(invoke).mockImplementation((cmd: string) => {
+          if (cmd === 'get_connections') return Promise.resolve(mockNestedPgConnections);
+          if (cmd === 'test_connection') return Promise.resolve('Connection successful!');
+          if (cmd === 'get_driver_manifest') return Promise.resolve(mockPostgresManifest);
+          if (cmd === 'get_available_databases') return Promise.resolve(['analytics', 'reporting']);
+          if (cmd === 'get_schemas') {
+            schemaListCallCount += 1;
+            return Promise.resolve(schemaListCallCount === 1 ? ['public'] : ['public', 'store']);
+          }
+          if (cmd === 'get_selected_schemas') return Promise.resolve(['public']);
+          if (cmd === 'get_schema_preference') return Promise.resolve('public');
+          if (cmd === 'get_tables') return Promise.resolve([]);
+          if (cmd === 'get_views') return Promise.resolve([]);
+          if (cmd === 'get_routines') return Promise.resolve([]);
+          if (cmd === 'set_window_title') return Promise.resolve(undefined);
+          if (cmd === 'disconnect_connection') return Promise.resolve(undefined);
+          return Promise.resolve(undefined);
+        });
+
+        const { result } = renderHook(() => useDatabase(), { wrapper });
+
+        await act(async () => {
+          await result.current.connect('pg-nested-conn');
+        });
+
+        await waitFor(() => {
+          expect(result.current.nestedDatabaseDataMap['analytics']?.schemas).toEqual(['public']);
+        });
+
+        // Without force: the guard makes this a no-op even though the
+        // mocked server response has since changed underneath it.
+        await act(async () => {
+          await result.current.loadNestedSchemas('analytics', 'pg-nested-conn');
+        });
+        expect(result.current.nestedDatabaseDataMap['analytics']?.schemas).toEqual(['public']);
+
+        // With force: the new schema shows up, and the existing selection
+        // (confirmed via get_selected_schemas, unaffected by the new schema
+        // appearing) is preserved rather than reset.
+        await act(async () => {
+          await result.current.loadNestedSchemas('analytics', 'pg-nested-conn', true);
+        });
+        await waitFor(() => {
+          expect(result.current.nestedDatabaseDataMap['analytics']?.schemas).toEqual(['public', 'store']);
+        });
+        expect(result.current.nestedDatabaseDataMap['analytics']?.selectedSchemas).toEqual(['public']);
+      },
+    );
   });
 });

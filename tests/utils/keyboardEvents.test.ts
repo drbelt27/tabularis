@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { isTextCompositionKeyEvent } from "../../src/utils/keyboardEvents";
+import { describe, expect, it, vi } from "vitest";
+import { getShortcutFocusContext, isTextCompositionKeyEvent, onActivationKey } from "../../src/utils/keyboardEvents";
 
 describe("keyboardEvents", () => {
   describe("isTextCompositionKeyEvent", () => {
@@ -23,6 +23,11 @@ describe("keyboardEvents", () => {
       expect(isTextCompositionKeyEvent(event)).toBe(true);
     });
 
+    it("detects compose keys", () => {
+      const event = new KeyboardEvent("keydown", { key: "Compose" });
+      expect(isTextCompositionKeyEvent(event)).toBe(true);
+    });
+
     it("detects legacy IME keyCode 229", () => {
       const event = new KeyboardEvent("keydown", { key: "a", keyCode: 229 } as KeyboardEventInit);
       expect(isTextCompositionKeyEvent(event)).toBe(true);
@@ -35,6 +40,82 @@ describe("keyboardEvents", () => {
         shiftKey: true,
       });
       expect(isTextCompositionKeyEvent(event)).toBe(false);
+    });
+  });
+
+  describe("onActivationKey", () => {
+    const keyEvent = (key: string, nested = false) => {
+      const currentTarget = document.createElement("div");
+      const target = nested ? document.createElement("input") : currentTarget;
+      return { key, target, currentTarget, preventDefault: vi.fn() };
+    };
+
+    it.each(["Enter", " "])("activates on %j and prevents the default action", (key) => {
+      const activate = vi.fn();
+      const event = keyEvent(key);
+      onActivationKey(activate)(event);
+      expect(activate).toHaveBeenCalledWith(event);
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it("ignores other keys", () => {
+      const activate = vi.fn();
+      const event = keyEvent("a");
+      onActivationKey(activate)(event);
+      expect(activate).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it("ignores keys pressed inside a nested control", () => {
+      const activate = vi.fn();
+      const event = keyEvent("Enter", true);
+      onActivationKey(activate)(event);
+      expect(activate).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+  });
+});
+
+
+describe("getShortcutFocusContext", () => {
+  it("treats a Monaco descendant as editable even without a text input", () => {
+    const editor = document.createElement("div");
+    editor.className = "monaco-editor";
+    const child = document.createElement("span");
+    editor.append(child);
+    expect(getShortcutFocusContext(child)).toEqual({
+      inMonaco: true, inEditable: true,
+    });
+  });
+
+  it.each(["input", "textarea", "select"])("recognizes a plain %s", (tag) => {
+    expect(getShortcutFocusContext(document.createElement(tag))).toEqual({
+      inMonaco: false, inEditable: true,
+    });
+  });
+
+  it("recognizes contentEditable and its descendants", () => {
+    const editable = document.createElement("div");
+    editable.setAttribute("contenteditable", "true");
+    const child = document.createElement("span");
+    editable.append(child);
+    expect(getShortcutFocusContext(editable)).toEqual({
+      inMonaco: false, inEditable: true,
+    });
+    expect(getShortcutFocusContext(child)).toEqual({
+      inMonaco: false, inEditable: true,
+    });
+  });
+
+  it.each(["button", "body"])("recognizes a non-editable %s", (tag) => {
+    expect(getShortcutFocusContext(document.createElement(tag))).toEqual({
+      inMonaco: false, inEditable: false,
+    });
+  });
+
+  it("accepts a missing focus element", () => {
+    expect(getShortcutFocusContext(null)).toEqual({
+      inMonaco: false, inEditable: false,
     });
   });
 });

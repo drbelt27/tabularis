@@ -9,6 +9,7 @@ import {
   getResultValueType,
   buildPkMap,
   serializePkKey,
+  isZebraStripedRow,
   DATA_GRID_ROW_HEIGHT,
   type ColumnDisplayInfo,
   type MergedRow,
@@ -20,7 +21,12 @@ import {
   isSetType,
   parseSetValues,
 } from "../../utils/columnTypes";
-import { isBlobColumn, isBlobWireFormat } from "../../utils/blob";
+import {
+  isBlobColumn,
+  isBlobWireFormat,
+  hasCellImagePreview,
+  extractCellImagePreviewUrl,
+} from "../../utils/blob";
 import { isLongTextCellTarget, truncateCellPreview } from "../../utils/text";
 import { getForeignKeyForPreview } from "../../utils/foreignKeys";
 import { getDateInputMode } from "../../utils/dateInput";
@@ -33,6 +39,7 @@ import { JsonExpansionEditor } from "./JsonExpansionEditor";
 import { TextCell } from "./TextCell";
 import { TextExpansionEditor } from "./TextExpansionEditor";
 import { EnumSetInput } from "./EnumSetInput";
+import { ImagePreviewHover } from "./ImagePreviewHover";
 import type { ForeignKey } from "../../types/editor";
 
 /**
@@ -65,6 +72,8 @@ export interface RowCtx {
   pkIndexMaps: number[];
   parentViewportWidth: number;
   readonly: boolean | undefined;
+  /** Optional alternating row background (Settings > Appearance > Data Grid). */
+  zebraStripes: boolean;
   updateSelection: (s: Set<number>) => void;
   /** Sensitive-column masking (#485): columns rendered masked until revealed. */
   maskedColIndices: Set<number>;
@@ -195,6 +204,7 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
     pkIndexMaps,
     parentViewportWidth,
     readonly: readonlyProp,
+    zebraStripes,
     maskedColIndices,
     revealedColIndices,
     revealedCells,
@@ -255,12 +265,14 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
         style={{ height: DATA_GRID_ROW_HEIGHT }}
         className={`transition-colors group ${
           isSelected
-            ? "bg-blue-900/20 border-l-4 border-blue-400"
+            ? "bg-accent-primary/10 border-l-4 border-accent-primary"
             : isInsertion
-              ? "bg-green-500/8 border-l-4 border-green-400"
+              ? "bg-semantic-new/8 border-l-4 border-semantic-new"
               : isPendingDelete
-                ? "bg-red-900/20 opacity-60"
-                : "hover:bg-surface-secondary/50"
+                ? "bg-semantic-deleted/10 opacity-60"
+                : isZebraStripedRow(rowIndex, zebraStripes)
+                  ? "bg-surface-secondary/40 hover:bg-surface-secondary/90"
+                  : "hover:bg-surface-secondary/50"
         }`}
       >
         <td
@@ -277,13 +289,15 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
           className={`px-2 py-1.5 text-xs text-center border-b border-r border-default sticky left-0 z-10 cursor-pointer select-none w-[50px] min-w-[50px] ${
             isInsertion
               ? isSelected
-                ? "bg-blue-900/40 text-blue-200 font-bold"
-                : "bg-green-950/30 text-green-300 font-bold"
+                ? "bg-accent-primary/20 text-accent font-bold"
+                : "bg-semantic-new/15 text-semantic-new font-bold"
               : isPendingDelete
-                ? "bg-red-950/50 text-red-500 line-through"
+                ? "bg-semantic-deleted/25 text-semantic-deleted line-through"
                 : isSelected
-                  ? "bg-blue-900/40 text-blue-200 font-bold"
-                  : "bg-base text-muted hover:bg-surface-secondary"
+                  ? "bg-accent-primary/20 text-accent font-bold"
+                  : isZebraStripedRow(rowIndex, zebraStripes)
+                    ? "bg-[color-mix(in_srgb,var(--surface-secondary)_40%,var(--bg-base))] text-muted hover:bg-surface-tertiary"
+                    : "bg-base text-muted hover:bg-surface-secondary"
           }`}
         >
           {isInsertion ? "NEW" : rowIndex + 1}
@@ -433,7 +447,7 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
               onContextMenu={(e) =>
                 handleContextMenu(e, rowOriginal, rowIndex, colIndex, colName)
               }
-              className={`px-4 py-1.5 text-sm border-b border-r border-default last:border-r-0 font-result ${isEditing ? "relative" : "whitespace-nowrap truncate max-w-[300px]"} ${fkForPreview ? "cursor-pointer" : "cursor-text"} ${stateClass} ${selectedColIndices.has(colIndex) || (rangeColBounds !== null && colIndex >= rangeColBounds.minCol && colIndex <= rangeColBounds.maxCol) ? "bg-blue-500/15" : ""} ${isFocused ? "ring-2 ring-inset ring-blue-400" : ""}`}
+              className={`px-4 py-1.5 text-sm border-b border-r border-default last:border-r-0 font-result ${isEditing ? "relative" : "whitespace-nowrap truncate max-w-[300px]"} ${fkForPreview ? "cursor-pointer" : "cursor-text"} ${stateClass} ${selectedColIndices.has(colIndex) || (rangeColBounds !== null && colIndex >= rangeColBounds.minCol && colIndex <= rangeColBounds.maxCol) ? "bg-accent-primary/15" : ""} ${isFocused ? "ring-2 ring-inset ring-accent-primary" : ""}`}
               title={
                 // The hover tooltip would leak the real value of a masked cell.
                 !isEditing && !isMasked
@@ -503,6 +517,7 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
                           }
                           onBlur={handleEditCommit}
                           onKeyDown={handleKeyDown}
+                          onCommitValue={commitEditWithValue}
                           inputRef={editInputRef}
                         />
                       );
@@ -600,7 +615,7 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
                           }}
                           onBlur={handleEditCommit}
                           onKeyDown={handleKeyDown}
-                          className="absolute left-0 top-0 max-w-[400px] max-h-[120px] bg-base text-primary border border-blue-500 rounded shadow-lg p-2 font-result text-sm resize-none z-50 outline-none"
+                          className="absolute left-0 top-0 max-w-[400px] max-h-[120px] bg-base text-primary border border-accent-primary rounded shadow-lg p-2 font-result text-sm resize-none z-50 outline-none"
                         />
                       </>
                     );
@@ -687,7 +702,8 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
                         isBlobWireFormat(displayValue)) &&
                       !isPendingDelete
                     ) {
-                      return (
+                      const hasImagePreview = hasCellImagePreview(displayValue);
+                      const blobContent = (
                         <span className="inline-flex items-center gap-1 group/blobcell w-full min-w-0">
                           <span className="truncate flex-1 min-w-0">
                             {renderDefaultCellContent(
@@ -707,6 +723,18 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
                           </button>
                         </span>
                       );
+
+                      if (hasImagePreview) {
+                        return (
+                          <ImagePreviewHover
+                            getSrc={() => extractCellImagePreviewUrl(displayValue)}
+                          >
+                            {blobContent}
+                          </ImagePreviewHover>
+                        );
+                      }
+
+                      return blobContent;
                     }
 
                     if (fkForPreview && onForeignKeyNavigate) {
@@ -725,7 +753,7 @@ export const MemoRow = React.memo(function MemoRow(rowCtx: MemoRowProps) {
                               e.stopPropagation();
                               onForeignKeyNavigate(fkForPreview, rawCellValue);
                             }}
-                            className="opacity-0 group-hover/fkcell:opacity-100 transition-opacity p-0.5 rounded text-muted hover:text-blue-400 hover:bg-surface-tertiary flex-shrink-0"
+                            className="opacity-0 group-hover/fkcell:opacity-100 transition-opacity p-0.5 rounded text-muted hover:text-accent hover:bg-surface-tertiary flex-shrink-0"
                             title={t("dataGrid.openReferenced", {
                               table: fkForPreview.ref_table,
                             })}

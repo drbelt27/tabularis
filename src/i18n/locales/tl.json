@@ -1,8 +1,33 @@
 {
   "toolbar": {
+    "valuePicker": {
+      "open": "Pumili mula sa mga value",
+      "title": "Pumili ng mga value",
+      "search": "Maghanap ng value",
+      "loading": "Nilo-load ang mga value…",
+      "error": "Hindi ma-load ang mga value",
+      "retry": "Subukang muli",
+      "empty": "Walang value sa column na ito",
+      "noMatch": "Walang tugmang value",
+      "limited": "Nangungunang {{count}} ayon sa bilang",
+      "use": "Gamitin ang {{count}} napili",
+      "useNone": "Gamitin ang napili"
+    },
+    "autoRefresh": {
+      "label": "Awtomatikong pag-refresh",
+      "off": "Naka-off",
+      "seconds": "{{seconds}}s",
+      "paused": "Naka-pause habang nag-e-edit",
+      "pausedSelection": "Naka-pause habang may napiling row",
+      "refresh": "I-refresh ang talahanayan",
+      "failed": "Hindi na-refresh: {{error}}"
+    },
     "filters": "Mga Filter",
     "toggleFilterPanel": "I-toggle ang structured filter panel",
     "filterConditions": "Mga kondisyon ng filter",
+    "matchMode": "Mode ng pagtutugma",
+    "matchAll": "Lahat",
+    "matchAny": "Alinman",
     "activeOf": "{{active}} sa {{total}} ang aktibo",
     "noFilters": "Walang filter —",
     "addFirstFilter": "magdagdag ng unang filter",
@@ -21,7 +46,12 @@
     "selectForApplyAll": "Piliin para sa Ilapat Lahat",
     "valuePlaceholder": "halaga",
     "fromPlaceholder": "mula",
-    "toPlaceholder": "hanggang"
+    "toPlaceholder": "hanggang",
+    "opContains": "naglalaman",
+    "opStartsWith": "nagsisimula sa",
+    "opEndsWith": "nagtatapos sa",
+    "opIsEmpty": "walang laman",
+    "opIsNotEmpty": "may laman"
   },
   "tags": {
     "label": "Mga tag",
@@ -49,6 +79,7 @@
   "common": {
     "save": "I-save",
     "close": "Isara",
+    "resizeColumn": "Baguhin ang laki ng column",
     "cancel": "Kanselahin",
     "delete": "Burahin",
     "edit": "I-edit",
@@ -86,6 +117,7 @@
     "materializedViews": "Mga Materialized View",
     "refreshMaterializedView": "I-refresh",
     "showDefinition": "Ipakita ang Definition",
+    "copyDdl": "Kopyahin ang DDL",
     "editView": "I-edit ang View",
     "viewDefinition": "Definition ng View",
     "dropView": "I-drop ang View",
@@ -106,6 +138,8 @@
     "noTables": "Walang nahanap na table",
     "expandTable": "I-expand ang table na {{name}}",
     "collapseTable": "I-collapse ang table na {{name}}",
+    "expandView": "I-expand ang view na {{name}}",
+    "collapseView": "I-collapse ang view na {{name}}",
     "columns": "mga column",
     "parameters": "mga parameter",
     "noParameters": "Walang parameter",
@@ -118,6 +152,9 @@
     "failDeleteIndex": "Hindi mabura ang index: ",
     "modifyColumn": "Baguhin ang Column",
     "copyName": "Kopyahin ang Pangalan",
+    "plainName": "Pangalan",
+    "quotedName": "Pangalan na may panipi",
+    "qualifiedName": "Kwalipikadong pangalan",
     "openInEditor": "Buksan sa Editor",
     "openInNewWindow": "Buksan sa Bagong Window",
     "closePanel": "Isara ang panel",
@@ -187,6 +224,7 @@
     "splitHorizontal": "Hatiin nang Pahiga",
     "separateConnections": "Paghiwalayin ang mga Koneksyon",
     "splitGroup": "Hatiin ang Grupo",
+    "resizePanels": "Baguhin ang laki ng mga panel",
     "filterTables": "I-filter ang mga table...",
     "noTablesMatch": "Walang table na tumugma",
     "filterDatabases": "I-filter ang mga database...",
@@ -199,6 +237,16 @@
     "noQueryHistory": "Walang kasaysayan ng query",
     "noHistorySearchResults": "Walang query na tumugma sa iyong paghahanap",
     "searchHistory": "Maghanap sa kasaysayan...",
+    "historyOutcomeFilter": "I-filter ayon sa resulta",
+    "historyOutcomeAny": "Anumang resulta",
+    "historyOutcomeSucceeded": "Matagumpay",
+    "historyOutcomeFailed": "Nabigo",
+    "historyTimeRangeFilter": "I-filter ayon sa oras",
+    "historyTimeAll": "Lahat ng oras",
+    "historyTimeLastHour": "Nakaraang oras",
+    "historyTimeToday": "Ngayon",
+    "historyTimeLast7Days": "Nakaraang 7 araw",
+    "historyTimeLast30Days": "Nakaraang 30 araw",
     "clearAllHistory": "Burahin ang Lahat ng Kasaysayan",
     "historyRecoveredTitle": "Na-reset ang kasaysayan ng query",
     "historyRecoveredBody": "Sira ang file ng kasaysayan at inilipat ito. Normal na maitatala ang mga bagong query. Backup file:",
@@ -210,6 +258,16 @@
     "insertToEditor": "Ipasok sa Editor",
     "openInNewTab": "Buksan sa Bagong Tab",
     "copyQuery": "Kopyahin ang Query",
+    "copyDetails": "Kopyahin ang Detalye",
+    "historyDetails": {
+      "database": "Database",
+      "executed": "Pinatakbo",
+      "duration": "Tagal",
+      "rowsAffected": "Mga row na naapektuhan",
+      "status": "Status",
+      "success": "tagumpay",
+      "error": "error"
+    },
     "runQuery": "I-run ang Query",
     "dateGroupToday": "Ngayon",
     "dateGroupYesterday": "Kahapon",
@@ -256,6 +314,11 @@
       "setup": "Setup",
       "activity": "Aktibidad",
       "safety": "Kaligtasan"
+    },
+    "output": {
+      "title": "Output ng tool",
+      "formatLabel": "Default na format ng output",
+      "formatDescription": "Ginagamit kapag hindi tinukoy ng MCP tool call ang output_format. Pinapanatili ng JSON ang compatibility; maaaring bawasan ng TOON ang paggamit ng token."
     },
     "safety": {
       "readOnlyTitle": "Read-only mode",
@@ -307,6 +370,7 @@
     "deleteTitle": "Kumpirmahin ang Pagbura",
     "failConnect": "Nabigo ang pagkonekta sa {{name}}. Pakisuri ang iyong mga setting o siguraduhing tumatakbo ang database.",
     "failDisconnect": "Nabigo ang pagdiskonekta sa database",
+    "failDelete": "Nabigo ang pagbura ng koneksyon",
     "failDuplicate": "Nabigo ang pag-duplicate ng koneksyon",
     "connecting": "Kumokonekta...",
     "open": "Buksan",
@@ -512,7 +576,7 @@
     "darkTheme": "Dark na Theme",
     "fontFamily": "Font Family",
     "fonts": {
-      "system": "System Default",
+      "system": "Default ng tema",
       "systemDesc": "Ginagamit ang default font ng iyong OS",
       "custom": "Custom Font",
       "customPlaceholder": "hal., Comic Sans MS",
@@ -535,6 +599,14 @@
       "confirm": "Kumpirmahin",
       "cancel": "Kanselahin"
     },
+    "dataGrid": {
+      "zebraStripes": "Magkakahaliling background ng row",
+      "zebraStripesDesc": "I-shade bawat ikalawang row para mas madaling sundan ang isang row sa mga malapad na table.",
+      "defaultSortDirection": "Default na direksyon ng pag-uri-uri",
+      "defaultSortDirectionDesc": "Paunang ayos ng pag-uri-uri kapag nag-click sa header ng column sa unang pagkakataon.",
+      "sortAscending": "Pataas (Ascending)",
+      "sortDescending": "Pababang (Descending)"
+    },
     "appearance_general": "Pangkalahatan",
     "appearance_sqlEditor": "SQL Editor",
     "appearance_editorTheme": "Theme ng Editor",
@@ -546,6 +618,8 @@
     "appearance_editorTabSize": "Tab Size",
     "appearance_editorWordWrap": "Word Wrap",
     "appearance_editorWordWrapDesc": "I-wrap ang mahahabang linya sa editor sa halip na mag-scroll nang pahiga.",
+    "appearance_editorHighlightInvisibleCharacters": "Ipakita ang mga nakatagong character",
+    "appearance_editorHighlightInvisibleCharactersDesc": "Markahan ang mga nakatagong Unicode at magkahawig na character sa SQL.",
     "appearance_editorShowLineNumbers": "Ipakita ang mga Line Number",
     "appearance_editorShowLineNumbersDesc": "Ipakita ang mga line number sa editor gutter.",
     "appearance_editorAcceptSuggestionOnEnter": "Tanggapin ang Suggestion gamit ang Enter",
@@ -555,6 +629,10 @@
     "runStatementUnderCursorDesc": "Kapag maraming statement ang isang script, patakbuhin ang nasa ilalim ng cursor sa halip na ipakita ang query picker. Pumili ng teksto para patakbuhin ang isang partikular na saklaw.",
     "safetyConfirmationDelay": "Iantala ang mga kumpirmasyon sa kaligtasan",
     "safetyConfirmationDelayDesc": "I-disable ang mga confirmation button nang limang segundo para sa mapanirang query at production writes.",
+    "notifyLongQueries": "I-abiso kapag natapos ang mahahabang query",
+    "notifyLongQueriesDesc": "Nagpapadala ng desktop notification kapag natapos ang isang query habang nasa background ang Tabularis.",
+    "notifyLongQueriesThreshold": "Threshold ng notification",
+    "notifyLongQueriesThresholdDesc": "Nag-aabiso lang para sa mga query na tumakbo nang hindi bababa sa ganitong katagal.",
     "formatter_title": "SQL Formatter",
     "formatter_keywordCase": "Case ng Keyword",
     "formatter_keywordCaseDesc": "Paano icapitalize ang SQL keywords (SELECT, FROM, WHERE) pagkatapos i-format.",
@@ -569,6 +647,10 @@
     "formatter_linesBetweenQueriesDesc": "Bilang ng blank lines sa pagitan ng SQL statements.",
     "formatter_denseOperators": "Siksik na Operators",
     "formatter_denseOperatorsDesc": "Alisin ang spaces sa paligid ng operators (hal. a=1 sa halip na a = 1).",
+    "autocomplete_title": "Autocomplete",
+    "autocomplete_keywordCase": "Case ng keyword",
+    "autocomplete_keywordCaseDesc": "Case ng mga SQL keyword na ini-insert ng autocomplete.",
+    "autocomplete_keywordCaseMatch": "Sundin ang tina-type",
     "editConfigJson": "I-edit ang config.json",
     "editConfigJsonDesc": "Direktang i-edit ang raw configuration file. Kailangan ng restart para mailapat ang mga pagbabago.",
     "configJsonModal": {
@@ -694,7 +776,7 @@
     "clearLogs": "I-clear ang mga Log",
     "clearLogsConfirm": "Sigurado ka bang gusto mong i-clear ang lahat ng log?",
     "exportLogs": "I-export ang mga Log",
-    "exportLogsSuccess": "Na-export ang mga log sa clipboard",
+    "exportLogsSuccess": "Na-export ang mga log",
     "noLogs": "Walang available na log",
     "refreshLogs": "I-refresh",
     "logLevel": "Level",
@@ -729,6 +811,11 @@
     "erDiagramDefaultLayout": "Default Layout",
     "erDiagramDefaultLayoutDesc": "Piliin ang default layout direction para sa ER diagrams",
     "plugins": {
+      "runtimeTitle": "Runtime ng plugin",
+      "callTimeout": "Timeout ng tawag",
+      "callTimeoutDesc": "Pinakamahabang oras na hinihintay ng Tabularis ang sagot ng plugin sa isang request (kasama ang mga query). Ilagay ang 0 para alisin ang limitasyon. Maaaring i-override ng bawat plugin ang value na ito sa sarili nitong settings.",
+      "shutdownGrace": "Grace period sa paghinto",
+      "shutdownGraceDesc": "Gaano katagal hinihintay ng Tabularis na matapos ang mga kasalukuyang request bago ihinto ang plugin (minimum na 1 segundo). Maaaring i-override ng bawat plugin ang value na ito sa sarili nitong settings.",
       "title": "Plugins",
       "overviewTitle": "Plugin Center",
       "overviewDesc": "Mag-install ng extension, pamahalaan ang plugin driver, at kontrolin ang runtime settings.",
@@ -742,6 +829,7 @@
       "loadingRegistry": "Naglo-load ng plugin registry...",
       "registryError": "Hindi na-load ang registry",
       "installed": "Naka-install",
+      "latest": "Pinakabago",
       "by": "ni",
       "platformNotSupported": "Hindi available para sa iyong platform",
       "update": "I-update",
@@ -758,6 +846,13 @@
       "filterAll": "Lahat",
       "filterInstalled": "Naka-install",
       "filterUpdates": "Mga Update",
+      "kindFilter": "I-filter ayon sa uri",
+      "kindAll": "Lahat ng uri",
+      "kindDrivers": "Mga driver",
+      "kindThemes": "Mga tema",
+      "kindTheme": "Tema",
+      "kindDriver": "Driver",
+      "manageThemes": "Pamahalaan sa Hitsura",
       "searchNoResults": "Walang plugin na tumutugma sa iyong paghahanap.",
       "version": "Bersyon",
       "requiresVersion": "Nangangailangan ng Tabularis ≥ {{version}}",
@@ -794,6 +889,14 @@
         "configure": "I-configure ang Interpreter"
       },
       "pluginSettings": {
+        "callTimeout": "Timeout ng tawag",
+        "callTimeoutDesc": "Ino-override ang global na timeout ng tawag para sa plugin na ito lamang. Ilagay ang 0 para alisin ang limitasyon, iwanang blangko para gamitin ang global na value.",
+        "callTimeoutPlaceholder": "Gamitin ang global ({{seconds}} s)",
+        "callTimeoutInherit": "Gamitin ang global na value",
+        "shutdownGrace": "Grace period sa paghinto",
+        "shutdownGraceDesc": "Ino-override ang global na grace period sa paghinto para sa plugin na ito lamang (minimum na 1 segundo). Iwanang blangko para gamitin ang global na value.",
+        "shutdownGracePlaceholder": "Gamitin ang global ({{seconds}} s)",
+        "shutdownGraceInherit": "Gamitin ang global na value",
         "title": "Mga Setting ng Plugin",
         "interpreter": "Interpreter",
         "interpreterDesc": "Opsyonal. Tukuyin ang executable na ginagamit para patakbuhin ang plugin na ito (hal. python3 sa macOS/Linux, python o full path sa Windows). Iwanang blank para gamitin ang default.",
@@ -836,7 +939,8 @@
       "categories": {
         "editor": "Editor",
         "navigation": "Navigation",
-        "data_grid": "Data Grid"
+        "data_grid": "Data Grid",
+        "notebook": "Kuwaderno"
       },
       "runQuery": "Patakbuhin ang query",
       "runQueryEditor": "Patakbuhin ang query (sa editor)",
@@ -848,9 +952,13 @@
       "toggleRightSidebar": "I-toggle ang kanang sidebar",
       "focusTableFilter": "Tumuon sa table filter",
       "openConnections": "Buksan ang mga koneksyon",
+      "openSettings": "Buksan ang settings",
+      "conflict": "Sumasalungat ang shortcut na ito sa “{{shortcut}}”.",
+      "needsModifier": "Magdagdag ng modifier key, gaya ng Ctrl o Alt.",
       "newConnection": "Bagong koneksyon",
       "newTab": "Bagong tab",
       "closeTab": "Isara ang tab",
+      "reopenClosedTab": "Muling buksan ang saradong tab",
       "nextPage": "Susunod na pahina",
       "prevPage": "Nakaraang pahina",
       "saveGridChanges": "I-save ang nakabinbing pagbabago",
@@ -860,15 +968,20 @@
       "pressKeys": "Pindutin ang key combination...",
       "notebookRunAll": "Patakbuhin ang Lahat ng Cell",
       "categories_notebook": "Notebook",
-      "pasteImportClipboard": "I-import mula sa Clipboard",
+      "pasteImportClipboard": "Mag-import ng data",
       "quickNavigator": "Quick Navigator",
       "formatSql": "I-format ang SQL",
       "extendCellRange": "Palawakin ang cell range",
       "jumpToEdge": "Tumalon sa gilid ng grid",
+      "jumpToColumn": "Pumunta sa kolum",
       "extendCellRangeToEdge": "Palawakin ang range hanggang sa gilid",
       "selectRow": "Piliin ang row",
       "selectColumn": "Piliin ang column",
-      "commandPaletteActions": "Maghanap ng mga aksyon"
+      "commandPalette": "Command Palette",
+      "commandPaletteActions": "Maghanap ng mga aksyon",
+      "editorZoomIn": "Editor: palakihin ang font",
+      "editorZoomOut": "Editor: paliitin ang font",
+      "editorZoomReset": "Editor: i-reset ang laki ng font"
     },
     "aiActivity": "AI Activity",
     "storage": {
@@ -948,6 +1061,22 @@
     }
   },
   "update": {
+    "badges": {
+      "morePlugins": "{{count}} pa — buksan ang Plugins para makita ang lahat ng update",
+      "driverUpdate": "May available na update ng driver",
+      "themeUpdate": "May available na update ng tema",
+      "tag": "Update",
+      "driverTooltip": "Available na ang {{name}} {{version}}. Ibinabahagi ang plugin na ito ng iyong mga koneksyon. Buksan ang Plugins → Updates para pamahalaan ito.",
+      "core_one": "May {{count}} update sa core",
+      "core_other": "May {{count}} update sa core",
+      "plugins_one": "May {{count}} update sa plugin",
+      "plugins_other": "May {{count}} update sa mga plugin",
+      "coreDetails": "Available na ang Tabularis {{version}}. Buksan ang Impormasyon para tingnan ang update sa core.",
+      "pluginDetails_one": "May update para sa: {{plugins}}",
+      "pluginDetails_other": "May mga update para sa: {{plugins}}",
+      "toastTitle": "May mga update sa plugin",
+      "openPlugins": "Buksan ang Plugins"
+    },
     "newVersionAvailable": "May Bagong Bersyon",
     "version": "Bersyon",
     "releaseNotes": "Mga Tala ng Release",
@@ -985,6 +1114,17 @@
     "configError": "Pakiconfigure ang AI provider sa Settings at maglagay ng prompt."
   },
   "newConnection": {
+    "ssmForwardHint": "Nire-resolve sa {{document}} - ipinapasa sa {{host}}:{{port}} sa pamamagitan ng managed node. Baguhin ang target na address sa tab na General; ang loopback host ay ang node mismo.",
+    "ssmIamHint": "Kailangan ng ssm:StartSession sa target at sa na-resolve na dokumento.",
+    "ssmNotAvailable": "Hindi available ang AWS SSM para sa driver na ito.",
+    "ssmPortRequired": "Magtakda muna ng wastong port sa tab na General.",
+    "ssmProfile": "AWS profile",
+    "ssmRegion": "AWS region",
+    "ssmTarget": "Managed node",
+    "ssmTargetRequired": "Ilagay ang managed node na daraanan ng koneksyon.",
+    "testSsm": "Subukan ang SSM",
+    "testSsmHint": "Nagbubukas ng tunay na port forwarding session at isinasara itong muli, nang hindi kumokonekta sa database.",
+    "useSsm": "Gamitin ang AWS SSM port forwarding",
     "titleNew": "Bagong Connection",
     "titleEdit": "I-edit ang Connection",
     "subtitle": "I-configure ang mga setting ng database connection",
@@ -994,6 +1134,10 @@
     "dbNameRequired": "Kailangan ang pangalan ng database",
     "connectionUriRequiresKeychain": "Dapat i-save ang mga connection URI sa OS keychain. I-enable ang “I-save ang mga password sa Keychain” para magpatuloy.",
     "connectionUriRequired": "Kailangan ang connection URI",
+    "connectionString": "Connection string",
+    "connectionStringPlaceholder": "hal. mysql://user:pass@localhost:3306/db",
+    "connectionStringExample": "Halimbawa ng connection string",
+    "chooseConnectionStringExample": "Pumili ng halimbawa",
     "dbType": "Uri ng Database",
     "host": "Host",
     "port": "Port",
@@ -1009,6 +1153,7 @@
     "loadDatabases": "I-load ang mga Database",
     "loadingDatabases": "Naglo-load...",
     "selectDatabases": "Mga Database",
+    "browseMultipleDatabases": "Browse multiple databases on this connection",
     "appearance": "Itsura",
     "noDatabasesSelected": "Pumili ng kahit isang database",
     "selectedDatabases": "{{count}} database ang napili",
@@ -1033,6 +1178,7 @@
     "sshKeyPassphrasePlaceholder": "Ilagay ang key passphrase kung naka-encrypt",
     "allowSshPrompt": "Payagan ang SSH password/PIN prompt",
     "saveKeychain": "I-save ang mga password sa Keychain",
+    "secretsStoredInPlainText": "Ang mga password ay ise-save bilang plain text sa file ng koneksyon.",
     "testConnection": "Subukan ang Connection",
     "save": "I-save",
     "failSave": "Nabigong i-save ang connection",
@@ -1042,6 +1188,7 @@
     "manageSshConnections": "Pamahalaan ang mga SSH Connection",
     "noSshConnections": "Walang available na SSH connection",
     "sslMode": "SSL Mode",
+    "sslUnverifiedRemoteHint": "Hindi bini-verify ng mode na ito ang certificate ng server. Para sa remote na host, gamitin ang {{mode}}.",
     "enableCleartextPlugin": "I-enable ang cleartext password plugin",
     "enableCleartextPluginHint": "Ipinapadala ang password gamit ang mysql_clear_password. Kailangan para sa mga bastion tulad ng Warpgate. Ginagamit lang sa TLS connection.",
     "enableCleartextPluginTlsRequired": "Pumili ng enforced TLS mode sa itaas (Required, Verify CA, o Verify Identity) para magamit ang cleartext password plugin.",
@@ -1093,6 +1240,8 @@
     "allDatabases": "Lahat ng database",
     "chooseDatabases": "Pumili ng mga database",
     "allDatabasesHint": "Sa pagkonekta, awtomatikong nilo-load ang lahat ng database sa server. Ang mga database na ginawa o tinanggal sa server ay lalabas nang kusa — hindi na kailangang i-edit ang koneksyong ito.",
+    "defaultDatabase": "Default na database",
+    "defaultDatabaseHint": "Ginagamit ng mga bagong query tab ang database na ito. Kapag inalis mo ito sa mga napili, magiging default ang susunod na napiling database.",
     "selectDatabasesHint": "Piliin ang mga database na isasama sa koneksyong ito.",
     "loadDatabasesHint": "I-click ang I-load ang mga database para kunin ang mga available."
   },
@@ -1135,8 +1284,15 @@
     "placeholder": "PIN o passphrase",
     "waiting": "Naghihintay sa iyong security key — hawakan ito para kumpirmahin."
   },
+  "dateInput": {
+    "useShownValue": "Gamitin ang value na ito"
+  },
   "dataGrid": {
+    "jumpToColumn": "Pumunta sa kolum",
+    "searchColumns": "Maghanap ng mga kolum",
+    "noMatchingColumns": "Walang katugmang kolum",
     "noRowIdentity": "Hindi ma-edit ang mga row: walang primary key ang \"{{table}}\", kaya kailangang kasama sa resulta ang lahat ng column ng table. Piliin ang lahat ng column (hal. SELECT *) o magdagdag ng primary key.",
+    "resizeRelatedPanel": "I-drag para baguhin ang laki ng panel",
     "keylessRowNotFound": "Walang row na tumugma sa mga orihinal na value habang ina-update ang \"{{column}}\". Walang primary key ang table at maaaring nagbago ang data — i-refresh at subukang muli.",
     "keylessDeleteNotFound": "Walang row na tumugma sa mga orihinal na value habang nagde-delete. Walang primary key ang table at maaaring nagbago ang data — i-refresh at subukang muli.",
     "newRow": "BAGO",
@@ -1177,6 +1333,22 @@
     "copyColumnName": "Kopyahin ang pangalan ng column",
     "copyColumnNameQuoted": "Kopyahin bilang `column`",
     "copyColumnNameTable": "Kopyahin bilang table.column",
+    "copyColumnNames": "Kopyahin ang mga pangalan ng column",
+    "copyColumnNamesLines": "Isa bawat linya",
+    "copyColumnNamesJson": "Bilang JSON array",
+    "copiedColumnNames_one": "Nakopya ang {{count}} pangalan ng column sa clipboard",
+    "copiedColumnNames_other": "Nakopya ang {{count}} na pangalan ng column sa clipboard",
+    "copyColumnValuesIn": "Kopyahin ang mga value ng column bilang SQL IN",
+    "filterByValue": "I-filter ayon sa value na ito",
+    "filterEquals": "Katumbas ng",
+    "filterNotEquals": "Hindi katumbas ng",
+    "filterIsNull": "NULL",
+    "filterIsNotNull": "Hindi NULL",
+    "filterGreaterThan": "Mas malaki sa",
+    "filterGreaterOrEqual": "Mas malaki o katumbas ng",
+    "filterLessThan": "Mas maliit sa",
+    "filterLessOrEqual": "Mas maliit o katumbas ng",
+    "filterContains": "Naglalaman ng",
     "copyCells": "Kopyahin ang {{count}} Cell",
     "copyRows": "Kopyahin ang {{count}} Row",
     "copied": "Nakopya sa clipboard",
@@ -1188,6 +1360,7 @@
     "setDefault": "I-set ang DEFAULT",
     "setEmpty": "I-set ang EMPTY",
     "setServerNow": "Ipasok ang Kasalukuyang Timestamp",
+    "setRandomUuid": "I-set ang random na UUID",
     "previewReferenced": "I-preview ang kaugnay na record",
     "openReferenced": "Buksan ang naka-reference na row sa {{table}}",
     "revealCell": "Ipakita ang cell",
@@ -1237,6 +1410,13 @@
     "newRow": "Bagong Row",
     "editing": "Ine-edit: {{table}}",
     "rowsRetrieved": "{{count}} row ang nakuha",
+    "columnsCount_one": "{{count}} column",
+    "columnsCount_other": "{{count}} column",
+    "timing": {
+      "execution": "Pagpapatupad",
+      "fetch": "Pagkuha",
+      "total": "Kabuuan"
+    },
     "queryExecuted": "Matagumpay na naisakatuparan ang query",
     "rowsAffected": "{{count}} row ang naapektuhan",
     "autoPaginated": "Auto paginated",
@@ -1256,7 +1436,10 @@
       "detached": "Na-detach ang mga resulta sa hiwalay na window",
       "reattach": "I-attach muli"
     },
+    "renameTab": "Palitan ang Pangalan",
+    "duplicateTab": "I-duplicate ang Tab",
     "closeTab": "Isara ang Tab",
+    "reopenClosedTab": "Muling Buksan ang Saradong Tab",
     "closeOthers": "Isara ang Ibang Tab",
     "closeRight": "Isara ang mga Tab sa Kanan",
     "closeLeft": "Isara ang mga Tab sa Kaliwa",
@@ -1316,11 +1499,18 @@
     "rollback": "I-rollback",
     "pendingCount": "{{count}} nakabinbin",
     "executingQuery": "Isinasakatuparan ang query...",
+    "transactionOpen": "TX",
+    "transactionOpenHint": "Bukas ang transaction — hawak ng tab na ito ang koneksyon nito hanggang sa COMMIT o ROLLBACK",
     "exporting": "Nag-e-export...",
     "rowsProcessed": "Mga Row na Naproseso",
     "exportLoadedRowsWarning": "{{loaded}} lang na na-load na row ang na-export mula sa kabuuang {{total}} row. Mag-page sa resulta o magpatakbo ng mas makitid na query bago mag-export kung kailangan mo ng mas maraming row.",
     "queryParameters": "Mga Parameter ng Query",
     "formatSql": "I-format ang SQL",
+    "selectCurrentStatement": "Piliin ang kasalukuyang statement",
+    "convertSelectionToSqlList": "I-convert ang napili sa listahan ng SQL",
+    "transformToUppercase": "Gawing malalaking titik",
+    "transformToLowercase": "Gawing maliliit na titik",
+    "removeInvisibleCharacters": "Linisin ang mga na-paste na character",
     "convertToConsole": "I-convert sa Console",
     "parameters": "Mga Parameter",
     "paramValuePlaceholder": "Value (hal. 'text' o 123)",
@@ -1471,6 +1661,7 @@
       "addSqlCell": "Magdagdag ng SQL Cell",
       "addMarkdownCell": "Magdagdag ng Markdown Cell",
       "addCell": "Magdagdag",
+      "resizeResult": "Baguhin ang laki ng resulta",
       "runAll": "Patakbuhin Lahat",
       "runAllTooltip": "I-execute ang lahat ng SQL cell mula taas hanggang baba",
       "runCell": "Patakbuhin ang Cell",
@@ -1591,6 +1782,14 @@
       "collapseAll": "I-collapse lahat",
       "expandAll": "I-expand lahat",
       "collapsed": "Na-collapse"
+    },
+    "queryNotification": {
+      "successTitle": "Natapos ang query",
+      "errorTitle": "Nabigo ang query",
+      "body": "{{tab}} · {{duration}}",
+      "batchSuccessTitle": "Natapos ang Patakbuhin lahat",
+      "batchErrorTitle": "Natapos ang Patakbuhin lahat na may mga error",
+      "batchBody": "{{tab}} · {{succeeded}} matagumpay, {{failed}} nabigo · {{duration}}"
     }
   },
   "createTable": {
@@ -1622,6 +1821,7 @@
     "colType": "Uri",
     "colNullable": "Nullable",
     "colKey": "Key",
+    "colDescription": "Paglalarawan",
     "yes": "OO",
     "no": "HINDI"
   },
@@ -1695,6 +1895,7 @@
     "exitFullscreen": "Lumabas sa Fullscreen",
     "noConnection": "Walang Connection ID",
     "noConnectionDesc": "Hindi maipakita ang diagram kung walang connection ID.",
+    "loadError": "Nabigo ang pag-load ng diagram: {{message}}",
     "switchToVertical": "Lumipat sa Vertical Layout",
     "switchToHorizontal": "Lumipat sa Horizontal Layout",
     "lockNodes": "I-lock ang posisyon ng mga node",
@@ -1764,7 +1965,13 @@
     "createSuccess": "Matagumpay na nagawa ang trigger",
     "updateSuccess": "Matagumpay na na-update ang trigger",
     "recreateTrigger": "I-recreate ang Trigger",
-    "confirmRecreate": "Ang pag-edit ng trigger ay nangangailangan ng pag-drop at pag-recreate nito. Magpatuloy sa pagbabago ng \"{{trigger}}\"?"
+    "confirmRecreate": "Ang pag-edit ng trigger ay nangangailangan ng pag-drop at pag-recreate nito. Magpatuloy sa pagbabago ng \"{{trigger}}\"?",
+    "functionNameCollision": "A function named \"{{name}}\" already exists. Rename the trigger or drop the function first.",
+    "originalRestored": "Naibalik ang orihinal na trigger.",
+    "restoreFailed": "Nabigo rin ang pagbalik sa orihinal na trigger: ",
+    "singleEventHint": "Isang event lang bawat trigger ang pinapayagan ng database na ito.",
+    "existingFunctionHint": "Pinananatili ng trigger na ito ang kasalukuyang function nito. I-edit ang mismong function sa SQL editor o sa raw SQL mode.",
+    "unsupportedDriver": "Hindi sinusuportahan ang pag-edit ng trigger para sa driver na ito."
   },
   "community": {
     "title": "Sumali sa Komunidad",
@@ -1880,7 +2087,9 @@
   },
   "contextMenu": {
     "openSidebar": "Buksan ang Sidebar Editor",
-    "openJsonEditor": "Buksan sa JSON Editor"
+    "openJsonEditor": "Buksan sa JSON Editor",
+    "openLink": "Buksan ang link",
+    "openLinkFailed": "Hindi mabuksan ang link: {{error}}"
   },
   "blobInput": {
     "noData": "Walang BLOB data",
@@ -1996,10 +2205,17 @@
     "noDatabase": "Walang database"
   },
   "clipboardImport": {
-    "title": "I-import mula sa Clipboard",
-    "subtitle": "I-paste ang structured data at i-preview ang schema bago mag-import",
+    "fileReadError": "Hindi mabasa ang file",
+    "fileNotFile": "Pumili ng regular na file.",
+    "fileUnsupported": "Pumili ng CSV, TSV, JSON, o Markdown file.",
+    "fileTooLarge": "Lampas sa 20 MiB ang file. Pumili ng mas maliit na file.",
+    "fileHint": "CSV, TSV, JSON array, o Markdown table. Maximum na laki ng file: 20 MiB.",
+    "fileSource": "Pumili ng file...",
+    "clipboardSource": "Clipboard",
+    "title": "Mag-import ng data",
+    "subtitle": "Mag-load ng structured data mula sa clipboard o file at suriin bago mag-import",
     "selectTablePlaceholder": "Pumili ng table...",
-    "contextMenuLabel": "I-import mula sa Clipboard...",
+    "contextMenuLabel": "Mag-import ng data...",
     "firstRowHeader": "Unang row bilang header",
     "tableName": "Pangalan ng table",
     "tableNamePlaceholder": "hal. sales_data",
@@ -2023,7 +2239,7 @@
     "success": "{{count}} row ang na-import sa \"{{table}}\"",
     "tableCreated": "Gumawa ng bagong table",
     "openTable": "Isara",
-    "noData": "Walang data sa clipboard",
+    "noData": "Walang data sa napiling pinagmulan",
     "retry": "Subukan ulit",
     "warningsCount": "{{count}} parsing warning",
     "columnsLabel": "mga column",
@@ -2201,7 +2417,6 @@
     "outputParameter": "Output parameter — ibabalik bilang resulta",
     "rawLabel": "Raw",
     "rawHint": "Ipasok ang halaga nang verbatim, walang string quoting (mga numero, expression)",
-    "runButton": "Patakbuhin",
     "runTabPrefix": "Patakbuhin",
     "returnValue": "nagbabalik ng"
   },
@@ -2223,7 +2438,9 @@
     "commands": {
       "openSettings": "Buksan ang settings",
       "openConnections": "Buksan ang connection manager",
-      "openTableInConsole": "Buksan ang kasalukuyang talahanayan sa SQL console"
+      "openTableInConsole": "Buksan ang kasalukuyang talahanayan sa SQL console",
+      "toggleWordWrapEnable": "Paganahin ang word wrap",
+      "toggleWordWrapDisable": "I-off ang word wrap"
     }
   },
   "pagination": {
@@ -2288,6 +2505,10 @@
       "summary": "Nabigo ang SSH tunnel",
       "recovery": "Suriin ang mga setting sa tab na SSH."
     },
+    "ssm": {
+      "summary": "Nabigo ang AWS SSM session",
+      "recovery": "Buksan ang mga detalye para sa eksaktong error ng AWS. Tiyaking naka-install ang AWS CLI at ang Session Manager plugin, kasalukuyan pa ang iyong mga kredensyal, at online ang managed node."
+    },
     "db-auth": {
       "summary": "Nabigo ang authentication sa database",
       "recovery": "Suriin ang username at password ng database."
@@ -2324,6 +2545,11 @@
         "start": "Sinisimulan ang Kubernetes port-forward",
         "ok": "Handa na ang port-forward",
         "error": "Nabigo ang Kubernetes port-forward"
+      },
+      "ssmForward": {
+        "start": "Sinisimulan ang AWS SSM port forwarding",
+        "ok": "Handa na ang port forwarding",
+        "error": "Nabigo ang AWS SSM port forwarding"
       },
       "dbConnect": {
         "start": "Kumokonekta sa database",
@@ -2382,5 +2608,13 @@
         "connection_uri": "Gumagamit ng connection string, hindi pa suportado ng plugin"
       }
     }
+  },
+  "themePackages": {
+    "import": "Mag-import ng tema",
+    "registryMismatch": "Ang package na ito ay mula sa ibang registry. Tahasang palitan ang naka-configure na registry bago ito i-update.",
+    "importedTheme": "Na-import na tema", "manage": "Pamahalaan ang mga tema", "importJSON": "Mag-import ng Tabularis JSON", "importVSCode": "Mag-import mula sa VS Code", "edit": "I-edit ang personal na tema", "localPackage": "Lokal na pakete", "installTitle": "I-install ang theme package", "installSubtitle": "Deklaratibong tema mula sa naka-configure na registry. Walang code na pinapatakbo.", "discover": "Mag-browse ng mga tema sa Plugins", "refresh": "I-refresh", "preview": "Silipin", "apply": "Ilapat", "confirm": "Kumpirmahin", "duplicate": "Kopyahin bilang personal", "exportJSON": "I-export ang hiwalay na JSON", "exportPackage": "I-export ang pakete ng may-akda", "remove": "Tanggalin", "update": "I-update ang pakete", "disable": "I-disable ang pakete", "enable": "I-enable ang pakete", "removePackage": "I-uninstall ang pakete", "disabled": "Naka-disable", "file": "File ng tema", "name": "Pangalan ng tema", "mode": "Mode / batayan", "detectMode": "Awtomatikong tukuyin (pumili kung malabo)", "source": "JSON ng tema", "search": "Maghanap ng mga tema", "loading": "Naglo-load…", "noThemes": "Walang available na tema sa registry na ito.", "details": "Detalye / pag-install", "readme": "README / mga screenshot", "version": "Bersyon ng pakete", "latest": "Pinakabagong release", "install": "I-install / palitan ang pakete", "chooseArchive": "Pumili ng ZIP archive", "screenshots": "Mga screenshot (buksan sa browser)", "externalMedia": "Hindi awtomatikong nilo-load ang mga larawan at ibang remote media. Magbubukas ang mga link sa browser.", "snapshotEditor": "Eksaktong editor JSON", "snapshotEditorHelp": "Ang hiwalay na snapshot na ito ang kumokontrol sa mga kulay ng SQL sa halip na lumang alias. Ipinapakita muna ang pagbabago at sinusuri ang orihinal na rebisyon bago i-save.", "recover": "I-recover ang naantalang pag-install", "recoveryExplanation": "Tahasan na suriin at i-recover ang mga hindi natapos na operasyon ng tema. Maaari nitong ibalik ang naantalang pag-install nang hindi pumipili ng tema o binabago ang naka-save na kagustuhan.", "recoveryDone": "Tapos na ang pagsusuri sa recovery. Tingnan ang anumang natitirang problema sa ibaba.", "catalogIssues": "Mga diagnostic ng katalogo", "fileTooLarge": "Lampas sa limitasyon ng import ang laki ng file.", "previewHint": "Pansamantala ang silip. Ibinabalik ng Kanselahin ang naka-save na tema; sine-save ng Ilapat ang pagpili.", "previewReady": "Aktibo ang silip. Suriin ang app at editor bago kumpirmahin.", "licenseNotice": "Hindi nagbibigay ng karapatang muling ipamahagi ang pag-import o pag-export. Panatilihin ang pagkilala sa may-akda at suriin ang lisensya bago mag-publish.", "acknowledge": "Nauunawaan at tinatanggap ko ang mga nakalistang limitasyon ng conversion.", "applyAfterSave": "Ilapat pagkatapos i-save", "savedNotApplied": "Na-save ang tema ngunit nabigo ang pagpili. Huwag uliting i-import; piliin ang naka-save na tema.", "installHint": "Pinapalitan ng pag-install ang buong pakete ngunit hindi pumipili ng variant. Hindi binibilang na download ang silip, lokal na import, at pagpili.", "installedHint": "Na-install ang pakete. Isara at pumili ng variant sa Hitsura.", "committedRefreshFailed": "Natapos ang operasyon ngunit nabigo ang pag-refresh ng katalogo. I-refresh bago subukang muli.", "missing": "Hindi available ang naka-save na pagpili: {{id}}. Gagamit ng offline na kapalit nang hindi binabago ang kagustuhan.", "downloads": "Mga download: {{count}}", "downloadsUnavailable": "Hindi available ang bilang ng download", "installedVersion": "Naka-install: {{version}}", "minimumVersion": "Kailangan ang Tabularis {{version}} o mas bago", "incompatible": "Hindi compatible ang release o walang eksaktong isang universal archive.", "packageWarning": "Apektado ang lahat ng variant. Pinapanatili ang mga naka-save na pagpili at ibinabalik kapag available muli.", "deleteWarning": "Tanggalin ang personal na tema? Gagamit ng mga default na tema ang mga naka-save nitong pagpili.", "duplicateHint": "Gumawa ng hiwalay at nae-edit na personal na kopya nang hindi ina-activate.", "exportError": "Nabigo ang pag-export ng pakete; available pa rin ang hiwalay na JSON export.", "runtimeWarning": "Ilagay ang unang release na talagang sumusuporta rito. Hindi patunay ng compatibility sa lumang client ang numero ng development build.", "packageName": "Identifier ng pakete (maliliit na titik)", "minimumRuntime": "Pinakamababang bersyon ng Tabularis", "license": "Lisensya at pagkilala sa may-akda", "rightsAcknowledged": "Nasuri ko ang karapatan sa muling pamamahagi at pagkilala sa may-akda.",
+    "groups": { "builtin": "Kasama na · offline", "installed": "Mga naka-install na pakete", "personal": "Mga personal na tema" }, "modes": { "light": "Maliwanag", "dark": "Madilim", "high-contrast": "Mataas na contrast" },
+    "importErrors": { "unrecognized": "Hindi nakilalang VS Code theme.", "modeRequired": "Pumili ng mode at silipin muli.", "includeOnly": "Hindi ma-import ang temang puro include lang. Ibigay ang aktuwal na mga kulay.", "noSupportedData": "Walang suportadong kulay o SQL token rule.", "invalidColor": "Mali ang halaga ng suportadong kulay.", "invalidRules": "Mali o sobra ang mga token rule." },
+    "diagnostics": { "unsupportedKey": "Hindi suportadong field", "unsupportedColor": "Hindi suportadong kulay", "unsupportedScope": "Hindi suportadong saklaw", "scopeApproximation": "Tinatayang SQL mapping", "unsupportedStyle": "Hindi suportadong estilo", "ignoredInclude": "Hindi ni-load ang include", "ignoredSemanticTokens": "Binale-wala ang semantic token", "unsupportedReference": "Hindi ni-load ang panlabas na sanggunian", "unsupportedSetting": "Hindi suportadong setting", "tokenAlphaFlattened": "Kinalkula ang opacity ng token laban sa batayang background", "modeApproximation": "Pinalitan o tinantiya ang mode", "diagnosticsTruncated": "Hindi isinama ang dagdag na diagnostic" }
   }
 }

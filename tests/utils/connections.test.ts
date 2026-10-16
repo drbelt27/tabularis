@@ -8,7 +8,9 @@ import {
   connectionSubtitle,
   getCardClass,
   updateExtraField,
+  withoutBlankSslMode,
   migrationDirectionForDriver,
+  connectionOrderAfterMove,
   type ConnectionParams,
   type DatabaseDriver,
 } from '../../src/utils/connections';
@@ -34,6 +36,31 @@ const makeRemoteCaps = (): DriverCapabilities => ({
 });
 
 describe('connections', () => {
+  describe('withoutBlankSslMode', () => {
+    it('omits blank ssl_mode', () => {
+      expect(withoutBlankSslMode({ driver: 'mysql', ssl_mode: '' })).toEqual({
+        driver: 'mysql',
+      });
+      expect(withoutBlankSslMode({ driver: 'mysql', ssl_mode: '   ' })).toEqual({
+        driver: 'mysql',
+      });
+    });
+
+    it('omits a null ssl_mode loaded from disk', () => {
+      // Saving with a blank mode persists it as `null`; saving that
+      // connection again must not throw on `.trim()`.
+      expect(withoutBlankSslMode({ driver: 'mysql', ssl_mode: null })).toEqual({
+        driver: 'mysql',
+      });
+    });
+
+    it('keeps a non-blank ssl_mode', () => {
+      expect(
+        withoutBlankSslMode({ driver: 'postgres', ssl_mode: 'require' }),
+      ).toEqual({ driver: 'postgres', ssl_mode: 'require' });
+    });
+  });
+
   describe('formatConnectionString', () => {
     it('should format SQLite connection string', () => {
       const params: ConnectionParams = {
@@ -526,12 +553,12 @@ describe('connections', () => {
 
     it('should return active class when connId matches activeConnectionId', () => {
       const cls = getCardClass('conn-1', 'conn-1', isOpen);
-      expect(cls).toContain('border-blue-500/40');
+      expect(cls).toContain('border-accent-primary/40');
     });
 
     it('should return open class when connection is open but not active', () => {
       const cls = getCardClass('open-conn', 'other', isOpen);
-      expect(cls).toContain('border-green-500/35');
+      expect(cls).toContain('border-accent-success/35');
     });
 
     it('should return default class when connection is neither active nor open', () => {
@@ -542,8 +569,8 @@ describe('connections', () => {
     it('should prioritize active over open when both could apply', () => {
       const isOpenAndActive = (id: string) => id === 'conn-1';
       const cls = getCardClass('conn-1', 'conn-1', isOpenAndActive);
-      expect(cls).toContain('border-blue-500/40');
-      expect(cls).not.toContain('border-green-500/35');
+      expect(cls).toContain('border-accent-primary/40');
+      expect(cls).not.toContain('border-accent-success/35');
     });
 
     it('should return default class when activeConnectionId is null', () => {
@@ -701,6 +728,31 @@ describe('connections', () => {
       ];
       expect(migrationDirectionForDriver('mysql', drivers)).toBeNull();
       expect(migrationDirectionForDriver('mysql-plugin', drivers)).toBeNull();
+    });
+  });
+
+  describe('connectionOrderAfterMove', () => {
+    const ids = ['a', 'b', 'c', 'd'];
+
+    it('moves a connection down into the target slot', () => {
+      expect(connectionOrderAfterMove(ids, 'a', 'c')).toEqual([
+        ['b', 0], ['c', 1], ['a', 2], ['d', 3],
+      ]);
+    });
+
+    it('moves a connection up into the target slot', () => {
+      expect(connectionOrderAfterMove(ids, 'd', 'b')).toEqual([
+        ['a', 0], ['d', 1], ['b', 2], ['c', 3],
+      ]);
+    });
+
+    it('returns null when dropped on itself', () => {
+      expect(connectionOrderAfterMove(ids, 'b', 'b')).toBeNull();
+    });
+
+    it('returns null when either id is not in the list', () => {
+      expect(connectionOrderAfterMove(ids, 'x', 'b')).toBeNull();
+      expect(connectionOrderAfterMove(ids, 'a', 'x')).toBeNull();
     });
   });
 });

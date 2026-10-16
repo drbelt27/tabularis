@@ -20,6 +20,12 @@ interface DumpDatabaseModalProps {
   connectionId: string;
   databaseName: string;
   tables: string[];
+  /** Schema name for a schema-based multi-db driver (PostgreSQL browsing
+   * several databases). When set alongside `database`, the dump is scoped
+   * to this specific schema within that database and the table list is
+   * read from `nestedDatabaseDataMap` instead of the flat `databaseDataMap`. */
+  schema?: string;
+  database?: string;
 }
 
 export const DumpDatabaseModal = ({
@@ -28,9 +34,11 @@ export const DumpDatabaseModal = ({
   connectionId,
   databaseName,
   tables,
+  schema: schemaProp,
+  database: databaseProp,
 }: DumpDatabaseModalProps) => {
   const { t } = useTranslation();
-  const { activeSchema, activeCapabilities, databaseDataMap, refreshDatabaseData } =
+  const { activeSchema: connectionActiveSchema, activeCapabilities, databaseDataMap, nestedDatabaseDataMap, refreshDatabaseData, refreshNestedSchemaData } =
     useDatabase();
   const { showAlert } = useAlert();
   const [includeStructure, setIncludeStructure] = useState(true);
@@ -43,29 +51,49 @@ export const DumpDatabaseModal = ({
   const [startTime, setStartTime] = useState<number | null>(null);
 
   const isMultiDb = isMultiDatabaseCapable(activeCapabilities);
+  // Schema-based multi-db mode (PostgreSQL nested tree): both a schema and a
+  // database are explicitly provided, so the dump doesn't rely on the
+  // connection's global active schema.
+  const isSchemaBasedDump = !!(schemaProp && databaseProp);
+  const activeSchema = schemaProp ?? connectionActiveSchema;
 
   // On a multi-database connection (e.g. MySQL) the dump targets a specific
   // database whose cached table list may be missing or belong to a different
   // database. Reload it whenever the dialog opens so the dump reflects the
   // target database's current schema. A ref keeps refreshDatabaseData out of the
   // dependency list (its identity changes on every store update, which would
-  // otherwise loop).
+  // otherwise loop). The nested (schema-based) case needs the same refresh —
+  // relying on the sidebar having already expanded that schema left the
+  // table list permanently empty if it never was.
   const refreshRef = useRef(refreshDatabaseData);
   refreshRef.current = refreshDatabaseData;
+  const refreshNestedRef = useRef(refreshNestedSchemaData);
+  refreshNestedRef.current = refreshNestedSchemaData;
   useEffect(() => {
-    if (isOpen && isMultiDb && databaseName) {
+    if (!isOpen) return;
+    if (isSchemaBasedDump) {
+      void refreshNestedRef.current(databaseProp!, schemaProp!, connectionId);
+    } else if (isMultiDb && databaseName) {
       refreshRef.current(databaseName);
     }
-  }, [isOpen, isMultiDb, databaseName]);
+  }, [isOpen, isMultiDb, databaseName, isSchemaBasedDump, databaseProp, schemaProp, connectionId]);
 
   // For multi-database connections read the table list straight from the target
   // database's freshly-loaded data (never the active-database fallback); other
   // drivers keep using the list resolved by the parent.
   const targetDbData = isMultiDb ? databaseDataMap[databaseName] : undefined;
-  const tablesLoading = isMultiDb ? (targetDbData?.isLoading ?? false) : false;
+  // For the nested (schema-based multi-db) case read from the nested map.
+  const nestedSchemaData = isSchemaBasedDump
+    ? nestedDatabaseDataMap[databaseProp!]?.schemaDataMap[schemaProp!]
+    : undefined;
+  const tablesLoading = isSchemaBasedDump
+    ? (nestedSchemaData?.isLoading ?? false)
+    : isMultiDb ? (targetDbData?.isLoading ?? false) : false;
   const effectiveTables = useMemo(
-    () => (isMultiDb ? (targetDbData?.tables ?? []).map((tbl) => tbl.name) : tables),
-    [isMultiDb, targetDbData, tables],
+    () => isSchemaBasedDump
+      ? (nestedSchemaData?.tables ?? []).map((tbl) => tbl.name)
+      : isMultiDb ? (targetDbData?.tables ?? []).map((tbl) => tbl.name) : tables,
+    [isSchemaBasedDump, nestedSchemaData, isMultiDb, targetDbData, tables],
   );
 
   // Detect content changes without reacting to array-reference churn; the actual
@@ -131,10 +159,11 @@ export const DumpDatabaseModal = ({
       setStartTime(Date.now());
       setElapsedTime(0);
 
-      // On multi-database connections (e.g. MySQL) scope the dump to the selected
-      // database so it does not fall back to the connection's primary database.
-      const databaseParam =
-        isMultiDb && databaseName ? { database: databaseName } : {};
+      const databaseParam = isSchemaBasedDump
+        ? { database: databaseProp }
+        : isMultiDb && databaseName
+          ? { database: databaseName }
+          : {};
 
       // Rust command expects `options` struct
       await invoke("dump_database", {
@@ -187,7 +216,7 @@ export const DumpDatabaseModal = ({
                         type="checkbox"
                         checked={includeStructure}
                         onChange={e => setIncludeStructure(e.target.checked)}
-                        className="rounded border-default bg-base focus:ring-blue-500 w-4 h-4"
+                        className="rounded border-default bg-base focus:ring-focus w-4 h-4"
                         disabled={isExporting}
                     />
                     <span>{t("dump.includeStructure")}</span>
@@ -197,7 +226,7 @@ export const DumpDatabaseModal = ({
                         type="checkbox"
                         checked={includeData}
                         onChange={e => setIncludeData(e.target.checked)}
-                        className="rounded border-default bg-base focus:ring-blue-500 w-4 h-4"
+                        className="rounded border-default bg-base focus:ring-focus w-4 h-4"
                         disabled={isExporting}
                     />
                     <span>{t("dump.includeData")}</span>
@@ -210,7 +239,7 @@ export const DumpDatabaseModal = ({
                     <span className="text-xs font-semibold uppercase text-muted">{t("dump.selectTables")} ({selectedTables.size}/{effectiveTables.length})</span>
                     <button
                         onClick={handleSelectAll}
-                        className="text-xs text-blue-500 hover:underline"
+                        className="text-xs text-accent hover:underline"
                         disabled={isExporting || tablesLoading}
                     >
                         {selectedTables.size === effectiveTables.length ? t("dump.deselectAll") : t("dump.selectAll")}
@@ -225,14 +254,17 @@ export const DumpDatabaseModal = ({
                         effectiveTables.map(table => {
                             const isSelected = selectedTables.has(table);
                             return (
-                                <div key={table}
+                                <button key={table}
+                                    type="button"
+                                    aria-pressed={isSelected}
+                                    disabled={isExporting}
                                     onClick={() => !isExporting && handleToggleTable(table)}
-                                    className={`flex items-center gap-2 p-2 rounded cursor-pointer border transition-colors ${isSelected ? 'bg-blue-500/10 border-blue-500/50' : 'hover:bg-surface-secondary border-transparent'} ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <div className={`w-4 h-4 flex items-center justify-center ${isSelected ? 'text-blue-500' : 'text-muted'}`}>
+                                    className={`w-full text-left flex items-center gap-2 p-2 rounded cursor-pointer border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${isSelected ? 'bg-accent-primary/10 border-accent-primary/50' : 'hover:bg-surface-secondary border-transparent'} ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <div className={`w-4 h-4 flex items-center justify-center ${isSelected ? 'text-accent' : 'text-muted'}`}>
                                         {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                                     </div>
                                     <span className="truncate text-sm select-none" title={table}>{table}</span>
-                                </div>
+                                </button>
                             );
                         })
                     )}
@@ -258,7 +290,7 @@ export const DumpDatabaseModal = ({
              {isExporting ? (
                  <button
                     onClick={handleStop}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded flex items-center gap-2 transition-colors"
+                    className="px-4 py-2 bg-accent-error hover:bg-accent-error/90 text-on-accent-error rounded flex items-center gap-2 transition-colors"
                  >
                     <Loader2 size={16} className="animate-spin" />
                     {t("editor.stop")}
@@ -267,7 +299,7 @@ export const DumpDatabaseModal = ({
                  <button
                     onClick={handleExport}
                     disabled={tablesLoading}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 text-inverse rounded flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                     <Download size={16} />
                     {t("dump.export")}

@@ -1,10 +1,18 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, Trash2, Loader2, Database, AlertTriangle, X } from "lucide-react";
+import { Search, Trash2, Loader2, Database, AlertTriangle, X, ChevronDown } from "lucide-react";
 import { groupByDate, formatHistoryTime } from "../../../utils/dateGroups";
 import { SqlHighlight } from "../../ui/SqlHighlight";
 import { formatSqlPreview } from "../../../utils/sqlHighlight";
 import { useSettings } from "../../../hooks/useSettings";
+import {
+  filterQueryHistoryEntries,
+  isQueryHistoryFilterActive,
+  QUERY_HISTORY_OUTCOME_OPTIONS,
+  QUERY_HISTORY_TIME_RANGE_OPTIONS,
+  type QueryHistoryOutcomeFilter,
+  type QueryHistoryTimeRange,
+} from "../../../utils/queryHistoryFilter";
 import type {
   QueryHistoryEntry,
   QueryHistoryRecoveryNotice,
@@ -23,6 +31,23 @@ interface QueryHistorySectionProps {
   onClearAll: () => void;
 }
 
+const selectClassName =
+  "w-full appearance-none bg-surface-secondary border border-default rounded px-1.5 pr-5 py-1 text-[11px] text-primary focus:outline-none focus:border-focus/50 cursor-pointer";
+
+const OUTCOME_LABEL_KEYS: Record<QueryHistoryOutcomeFilter, string> = {
+  any: "sidebar.historyOutcomeAny",
+  succeeded: "sidebar.historyOutcomeSucceeded",
+  failed: "sidebar.historyOutcomeFailed",
+};
+
+const TIME_RANGE_LABEL_KEYS: Record<QueryHistoryTimeRange, string> = {
+  all: "sidebar.historyTimeAll",
+  lastHour: "sidebar.historyTimeLastHour",
+  today: "sidebar.historyTimeToday",
+  last7Days: "sidebar.historyTimeLast7Days",
+  last30Days: "sidebar.historyTimeLast30Days",
+};
+
 export function QueryHistorySection({
   entries,
   isLoading,
@@ -34,14 +59,25 @@ export function QueryHistorySection({
 }: QueryHistorySectionProps) {
   const { t } = useTranslation();
   const { settings } = useSettings();
+  // Session-only: search and the new filters reset when the section unmounts
+  // (same as the existing search field; nothing is persisted).
   const [search, setSearch] = useState("");
+  const [outcome, setOutcome] = useState<QueryHistoryOutcomeFilter>("any");
+  const [timeRange, setTimeRange] = useState<QueryHistoryTimeRange>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const filteredEntries = useMemo(() => {
-    if (!search.trim()) return entries;
-    const lower = search.toLowerCase();
-    return entries.filter((e) => e.sql.toLowerCase().includes(lower));
-  }, [entries, search]);
+  const filterActive = isQueryHistoryFilterActive({ search, outcome, timeRange });
+
+  const filteredEntries = useMemo(
+    () =>
+      filterQueryHistoryEntries(entries, {
+        search,
+        outcome,
+        timeRange,
+        timeZone: settings.displayTimezone,
+      }),
+    [entries, search, outcome, timeRange, settings.displayTimezone],
+  );
 
   const groupedEntries = useMemo(
     () => groupByDate(filteredEntries, (e) => e.executedAt, settings.displayTimezone),
@@ -55,18 +91,18 @@ export function QueryHistorySection({
   };
 
   const recoveryBanner = recoveryNotice ? (
-    <div className="m-2 p-2.5 bg-amber-500/10 border border-amber-500/40 rounded text-[11px] text-amber-200 leading-snug">
+    <div className="m-2 p-2.5 bg-accent-warning/10 border border-accent-warning/40 rounded text-[11px] text-accent-warning leading-snug">
       <div className="flex items-start gap-2">
-        <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-400" />
+        <AlertTriangle size={14} className="shrink-0 mt-0.5 text-accent-warning" />
         <div className="flex-1 min-w-0">
           <div className="font-semibold mb-1">
             {t("sidebar.historyRecoveredTitle")}
           </div>
-          <div className="text-amber-200/80">
+          <div className="text-accent-warning/80">
             {t("sidebar.historyRecoveredBody")}
           </div>
           <div
-            className="mt-1 font-mono text-[10px] text-amber-300/70 break-all"
+            className="mt-1 font-mono text-[10px] text-accent-warning/70 break-all"
             title={recoveryNotice.backupPath}
           >
             {recoveryNotice.backupPath}
@@ -75,7 +111,7 @@ export function QueryHistorySection({
         <button
           type="button"
           onClick={onDismissRecoveryNotice}
-          className="shrink-0 text-amber-300/60 hover:text-amber-200 transition-colors"
+          className="shrink-0 text-accent-warning/60 hover:text-accent-warning transition-colors"
           title={t("sidebar.historyRecoveredDismiss")}
           aria-label={t("sidebar.historyRecoveredDismiss")}
         >
@@ -120,20 +156,62 @@ export function QueryHistorySection({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("sidebar.searchHistory")}
-            className="w-full pl-6 pr-2 py-1 text-xs bg-surface-secondary border border-default rounded text-primary placeholder:text-muted focus:outline-none focus:border-blue-500/50"
+            className="w-full pl-6 pr-2 py-1 text-xs bg-surface-secondary border border-default rounded text-primary placeholder:text-muted focus:outline-none focus:border-focus/50"
           />
         </div>
         <button
+          type="button"
           onClick={onClearAll}
-          className="p-1 text-muted hover:text-red-500 transition-colors shrink-0"
+          className="p-1 text-muted hover:text-accent-error transition-colors shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
           title={t("sidebar.clearAllHistory")}
+          aria-label={t("sidebar.clearAllHistory")}
         >
           <Trash2 size={13} />
         </button>
       </div>
 
-      {/* Search result count */}
-      {search.trim() && (
+      {/* Outcome + time filters (session-only, same as search) */}
+      <div className="px-2 pb-1.5 flex items-center gap-1">
+        <div className="relative flex-1 min-w-0">
+          <select
+            value={outcome}
+            onChange={(e) => setOutcome(e.target.value as QueryHistoryOutcomeFilter)}
+            aria-label={t("sidebar.historyOutcomeFilter")}
+            className={selectClassName}
+          >
+            {QUERY_HISTORY_OUTCOME_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {t(OUTCOME_LABEL_KEYS[value])}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={10}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+          />
+        </div>
+        <div className="relative flex-1 min-w-0">
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as QueryHistoryTimeRange)}
+            aria-label={t("sidebar.historyTimeRangeFilter")}
+            className={selectClassName}
+          >
+            {QUERY_HISTORY_TIME_RANGE_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {t(TIME_RANGE_LABEL_KEYS[value])}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={10}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+          />
+        </div>
+      </div>
+
+      {/* Filtered / total counter whenever any filter is active */}
+      {filterActive && (
         <div className="px-3 pb-1 text-[10px] text-muted">
           {filteredEntries.length} / {entries.length}
         </div>
@@ -151,18 +229,28 @@ export function QueryHistorySection({
               {t(`sidebar.${groupKey}`)}
             </div>
             {items.map((entry) => (
-              <div
+              <button
+                type="button"
                 key={entry.id}
+                aria-pressed={selectedId === entry.id}
                 onClick={() => setSelectedId(entry.id)}
                 onDoubleClick={() => onDoubleClick(entry)}
+                onKeyDown={(e) => {
+                  // Enter opens the entry like a double click; Space keeps selecting it.
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    setSelectedId(entry.id);
+                    onDoubleClick(entry);
+                  }
+                }}
                 onContextMenu={(e) => onContextMenu(e, entry)}
-                className={`pl-3 pr-3 py-1.5 cursor-pointer group transition-colors border-b border-default/30 ${
+                className={`block w-full text-left pl-3 pr-3 py-1.5 cursor-pointer group transition-colors border-b border-default/30 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
                   selectedId === entry.id
                     ? entry.status === "error"
-                      ? "bg-red-500/15"
+                      ? "bg-accent-error/15"
                       : "bg-surface-secondary"
                     : entry.status === "error"
-                      ? "hover:bg-red-500/10"
+                      ? "hover:bg-accent-error/10"
                       : "hover:bg-surface-secondary"
                 }`}
                 title={entry.database ? `[${entry.database}] ${entry.sql}` : entry.sql}
@@ -183,7 +271,7 @@ export function QueryHistorySection({
                 </div>
                 {entry.status === "error" ? (
                   <pre
-                    className="text-[11px] leading-[1.4] font-mono whitespace-pre-wrap break-all text-red-400/70 overflow-hidden"
+                    className="text-[11px] leading-[1.4] font-mono whitespace-pre-wrap break-all text-accent-error/70 overflow-hidden"
                     style={{
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
@@ -195,7 +283,7 @@ export function QueryHistorySection({
                 ) : (
                   <SqlHighlight sql={entry.sql} />
                 )}
-              </div>
+              </button>
             ))}
           </div>
         ))

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Filter,
@@ -7,20 +7,27 @@ import {
   Plus,
   SlidersHorizontal,
   X,
+  RefreshCw,
 } from "lucide-react";
-import type { TableColumn } from "../../types/editor";
+import type { AutoRefreshInterval, TableColumn } from "../../types/editor";
+import { AUTO_REFRESH_INTERVALS, normalizeAutoRefreshInterval } from "../../utils/autoRefresh";
 import {
   filterColumnSuggestions,
   getCurrentWordPrefix,
   replaceCurrentWord,
   buildStructuredFilterClause,
   buildSingleFilterClause,
+  isFilterComplete,
   createEmptyFilter,
+  buildDistinctValuesQuery,
+  buildValuePickerWhere,
+  parseDistinctValues,
 } from "../../utils/filterBar";
-import type { StructuredFilter } from "../../utils/filterBar";
+import type { StructuredFilter, FilterCombinator, DistinctValue } from "../../utils/filterBar";
 import { formatSqlIdentifier } from "../../utils/identifiers";
 import { formatSortClause } from "../../utils/tableToolbar";
 import { FilterRow } from "./FilterRow";
+import { StyledSelect } from "./StyledSelect";
 import { SlotAnchor } from "./SlotAnchor";
 import { useDatabase } from "../../hooks/useDatabase";
 
@@ -32,7 +39,23 @@ interface TableToolbarProps {
   placeholderSort: string;
   defaultLimit: number;
   columnMetadata?: TableColumn[];
+  /** Active table for plugin slot context (`data-grid.toolbar.actions`). */
+  tableName?: string | null;
   onUpdate: (filter: string, sort: string, limit: number | undefined) => void;
+  onRefresh?: () => void;
+  refreshDisabled?: boolean;
+  autoRefreshIntervalMs?: AutoRefreshInterval;
+  onAutoRefreshChange?: (interval: AutoRefreshInterval) => void;
+  autoRefreshPaused?: boolean;
+  /** Why auto-refresh is paused; only read while `autoRefreshPaused` is true. */
+  autoRefreshPausedReason?: "editing" | "selection";
+  /** Schema of the table shown in the grid. */
+  tableSchema?: string | null;
+  /**
+   * Runs a read-only query against the tab's connection. Enables the filter
+   * value picker (issue #869) together with `tableName`.
+   */
+  onRunQuery?: (sql: string) => Promise<{ rows: unknown[][] }>;
 }
 
 interface TableToolbarInternalProps extends TableToolbarProps {
@@ -40,6 +63,8 @@ interface TableToolbarInternalProps extends TableToolbarProps {
   onPanelOpenChange: (open: boolean) => void;
   structuredFilters: StructuredFilter[];
   onStructuredFiltersChange: (filters: StructuredFilter[]) => void;
+  combinator: FilterCombinator;
+  onCombinatorChange: (combinator: FilterCombinator) => void;
   appliedFilters: Record<string, boolean>;
   onTriggerApplied: (filterId: string) => void;
   onResetApplied: (filterId: string) => void;
@@ -56,18 +81,30 @@ const TableToolbarInternal = ({
   placeholderSort,
   defaultLimit,
   columnMetadata,
+  tableName = null,
   panelOpen,
   onPanelOpenChange,
   structuredFilters,
   onStructuredFiltersChange,
+  combinator,
+  onCombinatorChange,
   appliedFilters,
   onTriggerApplied,
   onResetApplied,
   onResetAllApplied,
   onUpdate,
+  onRefresh,
+  refreshDisabled,
+  autoRefreshIntervalMs = 0,
+  onAutoRefreshChange,
+  autoRefreshPaused,
+  autoRefreshPausedReason = "editing",
+  tableSchema,
+  onRunQuery,
 }: TableToolbarInternalProps) => {
   const { t } = useTranslation();
-  const { activeDriver, activeCapabilities } = useDatabase();
+  const { activeDriver, activeCapabilities, activeConnectionId, activeSchema } = useDatabase();
+  const autoRefreshActive = autoRefreshIntervalMs > 0;
   // Capability-driven when available (issue #614): a postgres-compatible
   // driver registered under a different id (e.g. a standalone PostgreSQL
   // plugin) is quoted the same as the builtin "postgres" driver.
@@ -92,8 +129,8 @@ const TableToolbarInternal = ({
   const sortInputRef = useRef<HTMLInputElement>(null);
   const sortAcMouseDown = useRef(false);
 
-  const panelRef = useRef<HTMLDivElement>(null);
-  const filtersButtonRef = useRef<HTMLButtonElement>(null);
+  const whereListId = useId();
+  const sortListId = useId();
 
   const columns = columnMetadata ?? [];
   const hasColumns = columns.length > 0;
@@ -119,29 +156,6 @@ const TableToolbarInternal = ({
     [getLimitVal, initialFilter, initialSort, initialLimit, onUpdate, quotingDriver]
   );
 
-  // ── click outside to close panel ─────────────────────────────────────────────
-
-  useEffect(() => {
-    if (!panelOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(target) &&
-        filtersButtonRef.current &&
-        !filtersButtonRef.current.contains(target)
-      ) {
-        closePanel();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  // closePanel is stable enough; adding it would cause infinite re-registration
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelOpen]);
-
   // ── panel helpers ─────────────────────────────────────────────────────────────
 
   const openPanel = () => {
@@ -152,11 +166,17 @@ const TableToolbarInternal = ({
   };
 
   const closePanel = useCallback(() => {
-    const clause = buildStructuredFilterClause(structuredFilters, quotingDriver);
+    const clause = buildStructuredFilterClause(structuredFilters, quotingDriver, combinator, "auto", columnMetadata);
     setFilterInput(clause);
     onPanelOpenChange(false);
     onUpdate(clause, formatSortClause(sortInput, quotingDriver), getLimitVal(limitInput));
-  }, [structuredFilters, sortInput, limitInput, getLimitVal, onUpdate, onPanelOpenChange, quotingDriver]);
+  }, [structuredFilters, combinator, sortInput, limitInput, getLimitVal, onUpdate, onPanelOpenChange, quotingDriver, columnMetadata]);
+
+  const handleCombinatorChange = (next: FilterCombinator) => {
+    if (next === combinator) return;
+    onCombinatorChange(next);
+    onResetAllApplied();
+  };
 
   const togglePanel = () => {
     if (panelOpen) {
@@ -170,29 +190,58 @@ const TableToolbarInternal = ({
 
   // Applies all enabled filters — does NOT close panel
   const handleApplyAll = useCallback(() => {
-    const clause = buildStructuredFilterClause(structuredFilters, quotingDriver);
+    const clause = buildStructuredFilterClause(structuredFilters, quotingDriver, combinator, "auto", columnMetadata);
     onUpdate(clause, formatSortClause(sortInput, quotingDriver), getLimitVal(limitInput));
     structuredFilters.forEach((f) => {
-      if (f.enabled !== false) {
+      if (f.enabled !== false && isFilterComplete(f)) {
         onTriggerApplied(f.id);
       } else {
         onResetApplied(f.id);
       }
     });
-  }, [structuredFilters, sortInput, limitInput, getLimitVal, onUpdate, onTriggerApplied, onResetApplied, quotingDriver]);
+  }, [structuredFilters, combinator, sortInput, limitInput, getLimitVal, onUpdate, onTriggerApplied, onResetApplied, quotingDriver, columnMetadata]);
+
+  const queryForValues = useCallback(
+    (filter: StructuredFilter) => buildDistinctValuesQuery({
+      table: tableName ?? "",
+      schema: tableSchema,
+      column: filter.column,
+      driver: quotingDriver,
+      where: buildValuePickerWhere(structuredFilters, filter.id, quotingDriver, combinator, columnMetadata),
+    }),
+    [tableName, tableSchema, quotingDriver, structuredFilters, combinator, columnMetadata],
+  );
+
+  // Count values using the other complete filters, excluding the edited row.
+  const loadValuesFor = useCallback(
+    async (filter: StructuredFilter): Promise<DistinctValue[]> => {
+      if (!onRunQuery || !tableName) return [];
+      const result = await onRunQuery(queryForValues(filter));
+      return parseDistinctValues(result.rows);
+    },
+    [onRunQuery, tableName, queryForValues],
+  );
+  const canPickValues = !!onRunQuery && !!tableName;
 
   // Applies only that single row's filter — resets Applied on all others
   const handleApplySingle = useCallback(
     (filter: StructuredFilter) => {
       onUpdate(
-        buildSingleFilterClause(filter, quotingDriver),
+        isFilterComplete(filter)
+          ? buildSingleFilterClause(
+              filter,
+              quotingDriver,
+              "auto",
+              columnMetadata?.find((c) => c.name === filter.column)?.data_type,
+            )
+          : "",
         formatSortClause(sortInput, quotingDriver),
         getLimitVal(limitInput),
       );
       onResetAllApplied();
-      onTriggerApplied(filter.id);
+      if (isFilterComplete(filter)) onTriggerApplied(filter.id);
     },
-    [sortInput, limitInput, getLimitVal, onUpdate, onResetAllApplied, onTriggerApplied, quotingDriver]
+    [sortInput, limitInput, getLimitVal, onUpdate, onResetAllApplied, onTriggerApplied, quotingDriver, columnMetadata]
   );
 
   const handleUnset = () => {
@@ -374,7 +423,7 @@ const TableToolbarInternal = ({
       commitSql(filterInput, sortInput, limitInput);
     } else {
       onUpdate(
-        buildStructuredFilterClause(structuredFilters, quotingDriver),
+        buildStructuredFilterClause(structuredFilters, quotingDriver, combinator, "auto", columnMetadata),
         formatSortClause(sortInput, quotingDriver),
         getLimitVal(limitInput),
       );
@@ -386,7 +435,7 @@ const TableToolbarInternal = ({
       commitSql(filterInput, sortInput, limitInput);
     } else {
       onUpdate(
-        buildStructuredFilterClause(structuredFilters, quotingDriver),
+        buildStructuredFilterClause(structuredFilters, quotingDriver, combinator, "auto", columnMetadata),
         formatSortClause(sortInput, quotingDriver),
         getLimitVal(limitInput),
       );
@@ -407,7 +456,7 @@ const TableToolbarInternal = ({
 
   return (
     // Size container so controls collapse in narrow split panes. The explicit
-    // z-index keeps the autocomplete/filter overlays above the grid below (a
+    // z-index keeps the autocomplete dropdowns above the grid below (a
     // container creates a stacking context that would otherwise paint under
     // later siblings).
     <div className="@container relative z-30">
@@ -416,19 +465,18 @@ const TableToolbarInternal = ({
         {/* Filters button */}
         {hasColumns && (
           <button
-            ref={filtersButtonRef}
             onClick={togglePanel}
             title={t("toolbar.toggleFilterPanel")}
             className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs border transition-all shrink-0 ${
               panelOpen
-                ? "bg-blue-600/20 border-blue-500/50 text-blue-300"
-                : "text-muted border-default hover:text-blue-300 hover:border-blue-500/40"
+                ? "bg-accent-primary/20 border-accent-primary/50 text-accent"
+                : "text-muted border-default hover:text-accent hover:border-accent-primary/40"
             }`}
           >
             <SlidersHorizontal size={12} />
             <span className="hidden @[520px]:inline">{t("toolbar.filters")}</span>
             {activeFilterCount > 0 && (
-              <span className="px-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-semibold bg-blue-500/30 text-blue-300 leading-none">
+              <span className="px-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-semibold bg-accent-primary/30 text-accent leading-none">
                 {activeFilterCount}
               </span>
             )}
@@ -437,9 +485,9 @@ const TableToolbarInternal = ({
 
         {/* WHERE input — hidden while panel is open */}
         {!panelOpen && (
-          <div className="flex items-center gap-2 flex-1 bg-base border border-default rounded px-2 py-1 focus-within:border-blue-500/50 transition-colors relative">
+          <div className="flex items-center gap-2 flex-1 bg-base border border-default rounded px-2 py-1 focus-within:border-focus/50 transition-colors relative">
             <Filter size={14} className="text-muted shrink-0" />
-            <span className="hidden @[440px]:inline text-xs text-blue-400 font-mono shrink-0">WHERE</span>
+            <span className="hidden @[440px]:inline text-xs text-accent font-mono shrink-0">WHERE</span>
             <input autoComplete="off"
               ref={filterInputRef}
               type="text"
@@ -450,12 +498,20 @@ const TableToolbarInternal = ({
               onChange={handleWhereChange}
               onBlur={handleWhereBlur}
               onKeyDown={handleWhereKeyDown}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={autocompleteOpen && autocompleteItems.length > 0}
+              aria-controls={autocompleteOpen && autocompleteItems.length > 0 ? whereListId : undefined}
+              aria-activedescendant={autocompleteOpen && autocompleteItems.length > 0 ? `${whereListId}-${autocompleteIndex}` : undefined}
               className="bg-transparent border-none outline-none text-xs text-secondary w-full placeholder:text-surface-tertiary font-mono"
               placeholder={`${placeholderColumn} > 5 AND status = 'active'`}
             />
 
             {autocompleteOpen && autocompleteItems.length > 0 && (
               <ul
+                id={whereListId}
+                role="listbox"
+                tabIndex={-1}
                 className="absolute left-0 top-full mt-1 z-50 bg-elevated border border-default rounded-lg shadow-xl min-w-52 max-h-52 overflow-y-auto"
                 onMouseDown={() => { autocompleteMouseDown.current = true; }}
                 onMouseUp={() => { autocompleteMouseDown.current = false; }}
@@ -463,9 +519,12 @@ const TableToolbarInternal = ({
                 {autocompleteItems.map((col, idx) => (
                   <li
                     key={col.name}
+                    id={`${whereListId}-${idx}`}
+                    role="option"
+                    aria-selected={idx === autocompleteIndex}
                     className={`flex items-center justify-between px-3 py-1.5 text-xs cursor-pointer transition-colors first:rounded-t-lg last:rounded-b-lg ${
                       idx === autocompleteIndex
-                        ? "bg-blue-600/25 text-blue-200"
+                        ? "bg-accent-primary/25 text-accent"
                         : "text-secondary hover:bg-surface-secondary"
                     }`}
                     onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(col); }}
@@ -484,7 +543,7 @@ const TableToolbarInternal = ({
           <div className="flex items-center gap-1.5 flex-1 px-2 py-1 min-w-0">
             <Filter size={12} className="text-muted shrink-0" />
             <span className="text-xs text-muted font-mono truncate">
-              {buildStructuredFilterClause(structuredFilters, quotingDriver) || (
+              {buildStructuredFilterClause(structuredFilters, quotingDriver, combinator, "auto", columnMetadata) || (
                 <em className="not-italic opacity-50">{t("toolbar.noActiveFilters")}</em>
               )}
             </span>
@@ -492,9 +551,9 @@ const TableToolbarInternal = ({
         )}
 
         {/* ORDER BY */}
-        <div className="relative flex items-center gap-1.5 flex-1 bg-base border border-default rounded px-2 py-1 focus-within:border-blue-500/50 transition-colors">
+        <div className="relative flex items-center gap-1.5 flex-1 bg-base border border-default rounded px-2 py-1 focus-within:border-focus/50 transition-colors">
           <ArrowUpDown size={14} className="text-muted shrink-0" />
-          <span className="hidden @[440px]:inline text-xs text-blue-400 font-mono shrink-0">ORDER BY</span>
+          <span className="hidden @[440px]:inline text-xs text-accent font-mono shrink-0">ORDER BY</span>
           <input autoComplete="off"
             ref={sortInputRef}
             type="text"
@@ -505,12 +564,20 @@ const TableToolbarInternal = ({
             onChange={handleSortChange}
             onBlur={handleSortBlur}
             onKeyDown={handleSortKeyDown}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={sortAcOpen && sortAcItems.length > 0}
+            aria-controls={sortAcOpen && sortAcItems.length > 0 ? sortListId : undefined}
+            aria-activedescendant={sortAcOpen && sortAcItems.length > 0 ? `${sortListId}-${sortAcIndex}` : undefined}
             className="bg-transparent border-none outline-none text-xs text-secondary w-full placeholder:text-surface-tertiary font-mono"
             placeholder={`${placeholderSort} DESC`}
           />
 
           {sortAcOpen && sortAcItems.length > 0 && (
             <ul
+              id={sortListId}
+              role="listbox"
+              tabIndex={-1}
               className="absolute left-0 top-full mt-1 z-50 bg-elevated border border-default rounded-lg shadow-xl min-w-52 max-h-52 overflow-y-auto"
               onMouseDown={() => { sortAcMouseDown.current = true; }}
               onMouseUp={() => { sortAcMouseDown.current = false; }}
@@ -518,9 +585,12 @@ const TableToolbarInternal = ({
               {sortAcItems.map((col, idx) => (
                 <li
                   key={col.name}
+                  id={`${sortListId}-${idx}`}
+                  role="option"
+                  aria-selected={idx === sortAcIndex}
                   className={`flex items-center justify-between px-3 py-1.5 text-xs cursor-pointer transition-colors first:rounded-t-lg last:rounded-b-lg ${
                     idx === sortAcIndex
-                      ? "bg-blue-600/25 text-blue-200"
+                      ? "bg-accent-primary/25 text-accent"
                       : "text-secondary hover:bg-surface-secondary"
                   }`}
                   onMouseDown={(e) => { e.preventDefault(); acceptSortSuggestion(col); }}
@@ -534,9 +604,9 @@ const TableToolbarInternal = ({
         </div>
 
         {/* LIMIT */}
-        <div className="flex items-center gap-1.5 w-20 @[560px]:w-32 bg-base border border-default rounded px-2 py-1 focus-within:border-blue-500/50 transition-colors shrink-0">
+        <div className="flex items-center gap-1.5 w-20 @[560px]:w-32 bg-base border border-default rounded px-2 py-1 focus-within:border-focus/50 transition-colors shrink-0">
           <ListFilter size={14} className="text-muted shrink-0" />
-          <span className="hidden @[440px]:inline text-xs text-blue-400 font-mono shrink-0">LIMIT</span>
+          <span className="hidden @[440px]:inline text-xs text-accent font-mono shrink-0">LIMIT</span>
           <input autoCorrect="off" autoCapitalize="off" autoComplete="off" spellCheck={false}
             type="number"
             value={limitInput}
@@ -548,21 +618,63 @@ const TableToolbarInternal = ({
           />
         </div>
 
+        {/* Manual refresh + auto-refresh interval */}
+        {onAutoRefreshChange && (
+          <div className="flex items-center gap-1.5 shrink-0 text-xs text-secondary">
+            <button type="button" onClick={onRefresh} disabled={refreshDisabled}
+              aria-label={t("toolbar.autoRefresh.refresh")}
+              title={t("toolbar.autoRefresh.refresh")}
+              className={`p-1 rounded hover:text-primary disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                autoRefreshActive ? "text-accent" : "text-muted"
+              }`}>
+              <RefreshCw size={14} />
+            </button>
+            <div className="flex items-center gap-1.5">
+              <span className={`hidden @[800px]:inline ${autoRefreshActive ? "text-accent" : ""}`}>
+                {t("toolbar.autoRefresh.label")}
+              </span>
+              <StyledSelect
+                ariaLabel={t("toolbar.autoRefresh.label")}
+                value={String(autoRefreshIntervalMs)}
+                onChange={(value) => onAutoRefreshChange(normalizeAutoRefreshInterval(Number(value)))}
+                options={AUTO_REFRESH_INTERVALS.map(String)}
+                getOptionLabel={(value) => Number(value)
+                  ? t("toolbar.autoRefresh.seconds", { seconds: Number(value) / 1000 })
+                  : t("toolbar.autoRefresh.off")}
+                active={autoRefreshActive}
+              />
+            </div>
+            {/* Always mounted so screen readers announce text changes reliably. */}
+            <span role="status" className="text-muted">
+              {autoRefreshPaused
+                ? t(autoRefreshPausedReason === "selection"
+                  ? "toolbar.autoRefresh.pausedSelection"
+                  : "toolbar.autoRefresh.paused")
+                : ""}
+            </span>
+          </div>
+        )}
         {/* Plugin extension slot */}
         <SlotAnchor
           name="data-grid.toolbar.actions"
-          context={{}}
+          context={{
+            connectionId: activeConnectionId,
+            tableName: tableName ?? null,
+            schema: tableSchema === undefined ? activeSchema : tableSchema,
+            driver: activeDriver,
+          }}
           className="flex items-center gap-1"
         />
       </div>
 
-      {/* Overlay filter panel */}
+      {/* Inline filter panel — pushes the grid down so results stay visible */}
       {panelOpen && (
+        // Layout wrapper: onKeyDown only catches Escape bubbling from the
+        // filter controls inside, which carry the semantics.
         <div
-          ref={panelRef}
+          role="presentation"
           onKeyDown={handlePanelKeyDown}
-          className="absolute top-full left-0 z-50 mt-1 w-full min-w-[min(560px,100cqw)] max-w-4xl bg-elevated border border-default/80 rounded-lg overflow-hidden"
-          style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)" }}
+          className="w-full bg-elevated border-b border-default/80"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-default/60 bg-base/40">
@@ -575,23 +687,46 @@ const TableToolbarInternal = ({
                 </span>
               )}
             </div>
-            <button
-              onClick={closePanel}
-              title={t("toolbar.closePanelEsc")}
-              className="w-5 h-5 flex items-center justify-center rounded text-muted hover:text-secondary hover:bg-surface-secondary transition-colors"
-            >
-              <X size={12} />
-            </button>
+            <div className="flex items-center gap-2">
+              <div
+                role="group"
+                aria-label={t("toolbar.matchMode")}
+                className="flex items-center rounded border border-default/60 overflow-hidden"
+              >
+                {(["AND", "OR"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={combinator === mode}
+                    onClick={() => handleCombinatorChange(mode)}
+                    className={`px-2 py-0.5 text-[10px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+                      combinator === mode
+                        ? "bg-accent-primary/20 text-accent"
+                        : "text-muted hover:text-secondary hover:bg-surface-secondary"
+                    }`}
+                  >
+                    {mode === "AND" ? t("toolbar.matchAll") : t("toolbar.matchAny")}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={closePanel}
+                title={t("toolbar.closePanelEsc")}
+                className="w-5 h-5 flex items-center justify-center rounded text-muted hover:text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </div>
           </div>
 
           {/* Filter rows — scroll horizontally when the pane is narrower than a row */}
-          <div className="divide-y divide-default/30 overflow-x-auto">
+          <div className="divide-y divide-default/30 overflow-x-auto overflow-y-auto max-h-[40vh]">
             {structuredFilters.length === 0 ? (
               <div className="flex items-center gap-2 px-3 py-3">
                 <span className="text-xs text-muted">{t("toolbar.noFilters")}</span>
                 <button
                   onClick={handleAddFilter}
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-xs text-accent transition-colors"
                 >
                   {t("toolbar.addFirstFilter")}
                 </button>
@@ -609,6 +744,10 @@ const TableToolbarInternal = ({
                   onEscape={closePanel}
                   isApplied={appliedFilters[filter.id] === true}
                   onTriggerApplied={() => onTriggerApplied(filter.id)}
+                  onLoadValues={canPickValues ? loadValuesFor : undefined}
+                  valuePickerContextKey={canPickValues
+                    ? JSON.stringify([activeConnectionId, queryForValues(filter)])
+                    : undefined}
                 />
               ))
             )}
@@ -626,14 +765,14 @@ const TableToolbarInternal = ({
             <button
               onClick={closePanel}
               title={t("toolbar.switchToSql")}
-              className="px-2.5 py-1 rounded text-xs text-muted border border-default/70 hover:text-blue-300 hover:border-blue-500/50 transition-colors"
+              className="px-2.5 py-1 rounded text-xs text-muted border border-default/70 hover:text-accent hover:border-accent-primary/50 transition-colors"
             >
               {t("toolbar.sql")}
             </button>
 
             <button
               onClick={handleAddFilter}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-muted border border-dashed border-default/70 hover:text-blue-300 hover:border-blue-500/50 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-muted border border-dashed border-default/70 hover:text-accent hover:border-accent-primary/50 transition-colors"
             >
               <Plus size={11} />
               {t("toolbar.addFilter")}
@@ -644,7 +783,7 @@ const TableToolbarInternal = ({
             {/* Apply All — does NOT close panel */}
             <button
               onClick={handleApplyAll}
-              className="px-3 py-1 rounded text-xs font-medium border transition-colors bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30 hover:border-blue-400/70"
+              className="px-3 py-1 rounded text-xs font-medium border transition-colors bg-accent-primary/20 border-accent-primary/50 text-accent hover:bg-accent-primary/30 hover:border-accent-primary/70"
             >
               {t("toolbar.applyAll")}
             </button>
@@ -660,6 +799,7 @@ const TableToolbarInternal = ({
 export const TableToolbar = (props: TableToolbarProps) => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [structuredFilters, setStructuredFilters] = useState<StructuredFilter[]>([]);
+  const [combinator, setCombinator] = useState<FilterCombinator>("AND");
   const [appliedFilters, setAppliedFilters] = useState<Record<string, boolean>>({});
 
   const handleTriggerApplied = useCallback((filterId: string) => {
@@ -683,6 +823,8 @@ export const TableToolbar = (props: TableToolbarProps) => {
       onPanelOpenChange={setPanelOpen}
       structuredFilters={structuredFilters}
       onStructuredFiltersChange={setStructuredFilters}
+      combinator={combinator}
+      onCombinatorChange={setCombinator}
       appliedFilters={appliedFilters}
       onTriggerApplied={handleTriggerApplied}
       onResetApplied={handleResetApplied}

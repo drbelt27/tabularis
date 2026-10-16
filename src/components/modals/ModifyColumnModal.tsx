@@ -21,6 +21,10 @@ interface ModifyColumnModalProps {
   connectionId: string;
   tableName: string;
   driver: string;
+  /** Schema/database this table belongs to; falls back to the connection's
+   * active schema when omitted (existing single-schema behavior). */
+  schema?: string;
+  database?: string;
   // If provided, we are in "Edit" mode. If null, "Add" mode.
   column?: {
     name: string;
@@ -38,10 +42,13 @@ export const ModifyColumnModal = ({
   connectionId,
   tableName,
   driver,
+  schema: schemaProp,
+  database,
   column,
 }: ModifyColumnModalProps) => {
   const { t } = useTranslation();
-  const { activeSchema, connectionDataMap } = useDatabase();
+  const { activeSchema: connectionActiveSchema, connectionDataMap } = useDatabase();
+  const activeSchema = schemaProp ?? connectionActiveSchema;
   const { dataTypes } = useDataTypes(driver, connectionId);
   const { allDrivers } = useDrivers();
   const driverManifest = allDrivers.find((d) => d.id === driver);
@@ -182,6 +189,7 @@ export const ModifyColumnModal = ({
           connectionId,
           query: sql,
           ...(activeSchema ? { schema: activeSchema } : {}),
+          ...(database ? { database } : {}),
         });
       }
 
@@ -201,8 +209,8 @@ export const ModifyColumnModal = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-default bg-base">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${isEdit ? 'bg-purple-900/30' : 'bg-blue-900/30'}`}>
-              {isEdit ? <Columns size={20} className="text-purple-400" /> : <Plus size={20} className="text-blue-400" />}
+            <div className={`p-2 rounded-lg ${isEdit ? 'bg-accent-secondary/15' : 'bg-accent-primary/15'}`}>
+              {isEdit ? <Columns size={20} className="text-accent-secondary" /> : <Plus size={20} className="text-accent" />}
             </div>
             <h2 className="text-lg font-semibold text-primary">
               {isEdit ? t("modifyColumn.titleEdit") : t("modifyColumn.titleAdd")}
@@ -232,7 +240,7 @@ export const ModifyColumnModal = ({
             <input autoCorrect="off" autoCapitalize="off" autoComplete="off" spellCheck={false}
               value={form.name}
               onChange={(e) => { setForm({ ...form, name: e.target.value }); setError(""); }}
-              className={`w-full bg-base border rounded-lg px-3 py-2 text-primary text-sm focus:border-blue-500 focus:outline-none font-mono ${!form.name.trim() && error ? 'border-red-500' : 'border-strong'}`}
+              className={`w-full bg-base border rounded-lg px-3 py-2 text-primary text-sm focus:border-focus focus:outline-none font-mono ${!form.name.trim() && error ? 'border-accent-error' : 'border-strong'}`}
               placeholder="column_name"
               autoFocus
             />
@@ -264,7 +272,7 @@ export const ModifyColumnModal = ({
                 noResultsLabel={t("common.noResults")}
               />
               {availableTypes.find((t) => t.name === form.type)?.requires_extension && (
-                <div className="text-xs text-amber-400 mt-1 flex items-center gap-1">
+                <div className="text-xs text-accent-warning mt-1 flex items-center gap-1">
                   <AlertTriangle size={12} />
                   <span>{t("modifyColumn.requiresExtension", { ext: availableTypes.find((t) => t.name === form.type)?.requires_extension })}</span>
                 </div>
@@ -317,7 +325,7 @@ export const ModifyColumnModal = ({
                   setForm({ ...form, isNullable: !e.target.checked })
                 }
                 disabled={(!canAlterColumn && isEdit) || form.isAutoInc}
-                className="accent-blue-500 disabled:opacity-50"
+                className="accent-accent-primary disabled:opacity-50"
               />
               <label
                 htmlFor="isNullable"
@@ -334,7 +342,7 @@ export const ModifyColumnModal = ({
                 checked={form.isPk}
                 onChange={(e) => setForm({ ...form, isPk: e.target.checked })}
                 disabled={isEdit || !canAlterPk}
-                className="accent-blue-500 disabled:opacity-50"
+                className="accent-accent-primary disabled:opacity-50"
               />
               <label
                 htmlFor="isPk"
@@ -357,7 +365,7 @@ export const ModifyColumnModal = ({
                   (isEdit && !(canAlterColumn && !!driverCapabilities?.auto_increment_keyword)) ||
                   !availableTypes.find((t) => t.name === form.type)?.supports_auto_increment
                 }
-                className="accent-blue-500 disabled:opacity-50"
+                className="accent-accent-primary disabled:opacity-50"
               />
               <label
                 htmlFor="isAutoInc"
@@ -403,7 +411,7 @@ export const ModifyColumnModal = ({
               !form.name.trim() ||
               (!canAlterColumn && isEdit && form.name === column?.name)
             }
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
+            className="bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-inverse px-6 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg shadow-accent-primary/20 transition-all"
           >
             {loading && <Loader2 size={16} className="animate-spin" />}
             <Save size={16} />{" "}

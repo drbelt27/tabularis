@@ -15,6 +15,8 @@ interface CreateForeignKeyModalProps {
   connectionId: string;
   tableName: string;
   driver: string;
+  schema?: string;
+  database?: string;
 }
 
 interface TableColumn {
@@ -33,10 +35,13 @@ export const CreateForeignKeyModal = ({
   onSuccess,
   connectionId,
   tableName,
-  driver
+  driver,
+  schema: schemaProp,
+  database,
 }: CreateForeignKeyModalProps) => {
   const { t } = useTranslation();
-  const { activeSchema, connectionDataMap } = useDatabase();
+  const { activeSchema: connectionActiveSchema, connectionDataMap } = useDatabase();
+  const activeSchema = schemaProp ?? connectionActiveSchema;
   const { allDrivers } = useDrivers();
   const canCreateFk = supportsCreateForeignKeys(connectionDataMap[connectionId]?.capabilities ?? getCapabilitiesForDriver(driver, allDrivers));
   const [fkName, setFkName] = useState('');
@@ -64,7 +69,10 @@ export const CreateForeignKeyModal = ({
         setOnUpdate('NO ACTION');
         setError('');
 
-        const schemaParam = activeSchema ? { schema: activeSchema } : {};
+        const schemaParam = {
+          ...(activeSchema ? { schema: activeSchema } : {}),
+          ...(database ? { database } : {}),
+        };
         Promise.all([
             invoke<TableInfo[]>('get_tables', { connectionId, ...schemaParam }),
             invoke<TableColumn[]>('get_columns', { connectionId, tableName, ...schemaParam })
@@ -75,12 +83,12 @@ export const CreateForeignKeyModal = ({
             if (tbls.length > 0) setRefTable(tbls[0].name);
         }).catch(e => setError(String(e)));
     }
-  }, [isOpen, connectionId, tableName, activeSchema]);
+  }, [isOpen, connectionId, tableName, activeSchema, database]);
 
   useEffect(() => {
       if (refTable && isOpen) {
           setFetchingRefCols(true);
-          invoke<TableColumn[]>('get_columns', { connectionId, tableName: refTable, ...(activeSchema ? { schema: activeSchema } : {}) })
+          invoke<TableColumn[]>('get_columns', { connectionId, tableName: refTable, ...(activeSchema ? { schema: activeSchema } : {}), ...(database ? { database } : {}) })
             .then(cols => {
                 setRefColumns(cols);
                 if (cols.length > 0) setRefColumn(cols[0].name);
@@ -88,7 +96,7 @@ export const CreateForeignKeyModal = ({
             .catch(e => console.error(e))
             .finally(() => setFetchingRefCols(false));
       }
-  }, [refTable, isOpen, connectionId, activeSchema]);
+  }, [refTable, isOpen, connectionId, activeSchema, database]);
 
   useEffect(() => {
       if (localColumn && refTable) {
@@ -148,6 +156,7 @@ export const CreateForeignKeyModal = ({
               connectionId,
               query: sql,
               ...(activeSchema ? { schema: activeSchema } : {}),
+              ...(database ? { database } : {}),
             });
           }
           onSuccess();
@@ -159,7 +168,7 @@ export const CreateForeignKeyModal = ({
       }
   };
 
-  const selectClass = "w-full bg-base border border-strong rounded-lg px-3 py-2 text-primary text-sm focus:border-blue-500 focus:outline-none appearance-none cursor-pointer hover:bg-elevated transition-colors";
+  const selectClass = "w-full bg-base border border-strong rounded-lg px-3 py-2 text-primary text-sm focus:border-focus focus:outline-none appearance-none cursor-pointer hover:bg-elevated transition-colors";
   const selectStyle = {
     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
     backgroundPosition: `right 0.5rem center`,
@@ -174,8 +183,8 @@ export const CreateForeignKeyModal = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-default bg-base">
           <div className="flex items-center gap-3">
-            <div className="bg-purple-900/30 p-2 rounded-lg">
-              <Link size={20} className="text-purple-400" />
+            <div className="bg-accent-secondary/15 p-2 rounded-lg">
+              <Link size={20} className="text-accent-secondary" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-primary">{t('createFk.title')}</h2>
@@ -202,7 +211,7 @@ export const CreateForeignKeyModal = ({
                     value={fkName}
                     onChange={(e) => { setFkName(e.target.value); setError(''); }}
                     autoFocus
-                    className={`w-full bg-base border rounded-lg px-3 py-2 text-primary text-sm focus:border-blue-500 focus:outline-none font-mono ${!fkName.trim() && error ? 'border-red-500' : 'border-strong'}`}
+                    className={`w-full bg-base border rounded-lg px-3 py-2 text-primary text-sm focus:border-focus focus:outline-none font-mono ${!fkName.trim() && error ? 'border-accent-error' : 'border-strong'}`}
                 />
             </div>
 
@@ -274,7 +283,7 @@ export const CreateForeignKeyModal = ({
            <button
              onClick={handleCreate}
              disabled={loading || !canCreateFk || !fkName.trim()}
-             className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all"
+             className="bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-inverse px-6 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-lg shadow-accent-primary/20 transition-all"
            >
              {loading && <Loader2 size={16} className="animate-spin" />}
              <Save size={16} /> {t('createFk.create')}

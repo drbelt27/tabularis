@@ -67,6 +67,8 @@ export interface ConnectionParams {
   port?: number;
   username?: string;
   password?: string;
+  /** TLS mode selected for the server connection. */
+  ssl_mode?: string;
   /** Raw driver-specific connection URI, forwarded verbatim to the driver.
    * Never persisted in connections.json: it embeds credentials and is stored
    * in the OS keychain instead. */
@@ -91,6 +93,11 @@ export interface ConnectionParams {
   k8s_resource_type?: string;
   k8s_resource_name?: string;
   k8s_port?: number;
+  // AWS SSM
+  ssm_enabled?: boolean;
+  ssm_target?: string;
+  ssm_profile?: string;
+  ssm_region?: string;
   /** SQL run on every new connection to this data source (e.g. SET / set_config). */
   startup_script?: string;
   /** Opaque plugin-specific connection fields (e.g. `region` for a DynamoDB
@@ -98,6 +105,22 @@ export interface ConnectionParams {
   extra?: Record<string, string>;
   /** Optional proxy override for this connection. */
   proxy?: ProxyOverride;
+}
+
+/**
+ * Drop blank `ssl_mode` so the backend applies the driver default. The backend
+ * persists an omitted mode as `null`, so a connection loaded from disk can
+ * carry `null` here as well as `undefined`.
+ */
+export function withoutBlankSslMode<T extends { ssl_mode?: string | null }>(
+  params: T,
+): Omit<T, "ssl_mode"> | T {
+  if (params.ssl_mode == null || params.ssl_mode.trim() === "") {
+    const rest = { ...params };
+    delete rest.ssl_mode;
+    return rest;
+  }
+  return params;
 }
 
 /**
@@ -320,6 +343,17 @@ export function connectionSubtitle(
 }
 
 /**
+ * Resting look shared by connection cards and plugin cards: `primary` accent
+ * on hover, state tints (active/open) are layered on top by `getCardClass`.
+ */
+export const CARD_IDLE_CLASS =
+  'border-strong bg-elevated hover:border-accent-primary/30 hover:bg-surface-primary hover:shadow-md hover:shadow-black/10';
+
+/** Resting look for cards that are not themselves clickable (plugins): no accent on hover. */
+export const CARD_RESTING_CLASS =
+  'border-strong bg-elevated hover:shadow-md hover:shadow-black/10';
+
+/**
  * CSS class string for a connection card/row based on its active/open state.
  */
 export function getCardClass(
@@ -328,10 +362,10 @@ export function getCardClass(
   isConnectionOpen: (id: string) => boolean,
 ): string {
   if (activeConnectionId === connId)
-    return 'border-blue-500/40 bg-blue-500/5 ring-1 ring-blue-500/20 shadow-lg shadow-blue-500/8';
+    return 'border-accent-primary/40 bg-accent-primary/5 ring-1 ring-accent-primary/20 shadow-lg shadow-accent-primary/10';
   if (isConnectionOpen(connId))
-    return 'border-green-500/35 bg-green-500/4 ring-1 ring-green-500/15 shadow-md shadow-green-500/6';
-  return 'border-strong bg-elevated hover:border-blue-400/30 hover:bg-surface-primary hover:shadow-md hover:shadow-black/10';
+    return 'border-accent-success/35 bg-accent-success/5 ring-1 ring-accent-success/15 shadow-md shadow-accent-success/10';
+  return CARD_IDLE_CLASS;
 }
 
 /**
@@ -357,4 +391,18 @@ export function generateConnectionName(
 
   const host = params.host || "localhost";
   return `${params.database}@${host}`;
+}
+
+export function connectionOrderAfterMove(
+  ids: string[],
+  fromId: string,
+  toId: string,
+): Array<[string, number]> | null {
+  const fromIdx = ids.indexOf(fromId);
+  const toIdx = ids.indexOf(toId);
+  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return null;
+  const next = [...ids];
+  next.splice(fromIdx, 1);
+  next.splice(toIdx, 0, fromId);
+  return next.map((id, i) => [id, i]);
 }

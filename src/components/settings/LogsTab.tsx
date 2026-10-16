@@ -27,10 +27,10 @@ interface LogEntry {
 }
 
 const LOG_LEVEL_COLORS: Record<string, string> = {
-  ERROR: "text-red-400",
-  WARN: "text-yellow-400",
-  INFO: "text-blue-400",
-  DEBUG: "text-green-400",
+  ERROR: "text-accent-error",
+  WARN: "text-accent-warning",
+  INFO: "text-accent-info",
+  DEBUG: "text-accent-success",
 };
 
 export function LogsTab() {
@@ -72,6 +72,12 @@ export function LogsTab() {
     }
   }, [levelFilter, settings.maxLogEntries]);
 
+  const showError = useCallback(
+    (error: unknown) =>
+      showAlert(String(error), { title: t("common.error"), kind: "error" }),
+    [t, showAlert],
+  );
+
   const handleClearLogs = useCallback(async () => {
     try {
       const confirmed = await ask(t("settings.clearLogsConfirm"), {
@@ -83,8 +89,9 @@ export function LogsTab() {
       await loadLogs();
     } catch (e) {
       console.error("Failed to clear logs", e);
+      showError(e);
     }
-  }, [t, loadLogs]);
+  }, [t, loadLogs, showError]);
 
   const handleExportLogs = useCallback(async () => {
     try {
@@ -100,8 +107,9 @@ export function LogsTab() {
       });
     } catch (e) {
       console.error("Failed to export logs", e);
+      showError(e);
     }
-  }, [t, showAlert]);
+  }, [t, showAlert, showError]);
 
   const handleToggleLogging = useCallback(
     async (enabled: boolean) => {
@@ -111,9 +119,10 @@ export function LogsTab() {
         await loadLogs();
       } catch (e) {
         console.error("Failed to toggle logging", e);
+        showError(e);
       }
     },
-    [updateSetting, loadLogs],
+    [updateSetting, loadLogs, showError],
   );
 
   const handleSetMaxSize = useCallback(
@@ -124,9 +133,10 @@ export function LogsTab() {
         await loadLogs();
       } catch (e) {
         console.error("Failed to set max size", e);
+        showError(e);
       }
     },
-    [updateSetting, loadLogs],
+    [updateSetting, loadLogs, showError],
   );
 
   useEffect(() => {
@@ -181,7 +191,7 @@ export function LogsTab() {
         <div className="flex gap-2 py-3">
           <button
             onClick={handleClearLogs}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-secondary hover:bg-red-900/20 text-secondary hover:text-red-400 border border-strong hover:border-red-900/30 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-surface-secondary hover:bg-accent-error/10 text-secondary hover:text-accent-error border border-strong hover:border-accent-error/15 rounded-lg text-sm font-medium transition-colors"
           >
             <Trash2 size={16} />
             {t("settings.clearLogs")}
@@ -196,7 +206,7 @@ export function LogsTab() {
           <button
             onClick={loadLogs}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-50 text-inverse rounded-lg text-sm font-medium transition-colors"
           >
             <RotateCcw
               size={16}
@@ -216,7 +226,7 @@ export function LogsTab() {
           <select
             value={levelFilter}
             onChange={(e) => setLevelFilter(e.target.value)}
-            className="bg-base border border-strong rounded px-3 py-1.5 text-sm text-primary focus:outline-none focus:border-blue-500"
+            className="bg-base border border-strong rounded px-3 py-1.5 text-sm text-primary focus:outline-none focus:border-focus"
           >
             <option value="">{t("settings.allLevels")}</option>
             <option value="DEBUG">{t("settings.debug")}</option>
@@ -281,7 +291,7 @@ export function LogsTab() {
                             <div>
                               <button
                                 onClick={() => toggleLogExpansion(i)}
-                                className="flex items-center gap-1 hover:text-blue-400 transition-colors text-left"
+                                className="flex items-center gap-1 hover:text-accent transition-colors text-left"
                               >
                                 {isExpanded ? (
                                   <ChevronDown

@@ -46,6 +46,37 @@ async fn test_get_columns_pk_detection() {
 
 #[tokio::test]
 #[ignore]
+async fn test_table_and_column_comments() {
+    require_pg!();
+    let params = pg_params();
+
+    let tables = postgres::get_tables(&params, "test_schema")
+        .await
+        .expect("get_tables should succeed");
+    let table = tables
+        .iter()
+        .find(|table| table.name == "all_types")
+        .expect("all_types table should exist");
+    assert_eq!(
+        table.comment.as_deref(),
+        Some("PostgreSQL metadata integration fixture")
+    );
+
+    let columns = postgres::get_columns(&params, "all_types", "test_schema")
+        .await
+        .expect("get_columns should succeed");
+    let text_column = columns
+        .iter()
+        .find(|column| column.name == "col_text")
+        .expect("col_text column should exist");
+    assert_eq!(
+        text_column.comment.as_deref(),
+        Some("Free-form text used by metadata tests")
+    );
+}
+
+#[tokio::test]
+#[ignore]
 async fn test_get_columns_nullable_detection() {
     require_pg!();
     let params = pg_params();
@@ -99,14 +130,10 @@ async fn test_get_columns_character_max_length() {
         .expect("get_columns should succeed");
 
     let varchar_col = columns.iter().find(|c| c.name == "col_varchar").unwrap();
-    // KNOWN BEHAVIOR: The PG driver does NOT populate character_maximum_length.
-    // This is a driver limitation, not a PostgreSQL limitation (PG does expose this
-    // in information_schema). The plugin MUST match this exact behavior (return None).
-    // If the built-in driver is fixed later, this test will correctly fail — prompting
-    // an update to both the test and the plugin.
     assert_eq!(
-        varchar_col.character_maximum_length, None,
-        "Built-in PG driver returns None for character_maximum_length (known limitation)"
+        varchar_col.character_maximum_length,
+        Some(255),
+        "PG driver returns character_maximum_length for varchar(n)"
     );
 
     let text_col = columns.iter().find(|c| c.name == "col_text").unwrap();

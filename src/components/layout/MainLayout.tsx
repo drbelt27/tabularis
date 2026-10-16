@@ -1,6 +1,10 @@
+import { lazy, Suspense } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { LoadingState } from "../ui/LoadingState";
 
 import { CommandPaletteProvider } from "../../contexts/CommandPaletteProvider";
+import { PluginRegistryProvider } from "../../contexts/PluginRegistryProvider";
+import { PluginUpdateToast } from "../plugins/PluginUpdateToast";
 import { useAutoConnectFromUrl } from "../../hooks/useAutoConnectFromUrl";
 import { useConnectionLayoutContext } from "../../hooks/useConnectionLayoutContext";
 import { useConnectionWindowLifecycle } from "../../hooks/useConnectionWindowLifecycle";
@@ -12,7 +16,7 @@ import { CommandPaletteScopeBridge } from "./CommandPaletteScopeBridge";
 import { ProductionBanner } from "./ProductionBanner";
 import { RightSidebar } from "./RightSidebar";
 import { Sidebar } from "./Sidebar";
-import { SplitPaneLayout } from "./SplitPaneLayout";
+const SplitPaneLayout = lazy(() => import("./SplitPaneLayout").then((m) => ({ default: m.SplitPaneLayout })));
 
 const MainLayoutContent = () => {
   const { splitView, isSplitVisible } = useConnectionLayoutContext();
@@ -29,7 +33,9 @@ const MainLayoutContent = () => {
 
   return (
     <div className="flex h-screen bg-base text-primary overflow-hidden">
-      <CommandPaletteScopeBridge scopeId={ROOT_COMMAND_SCOPE_ID} />
+      {location.pathname !== "/editor" && (
+        <CommandPaletteScopeBridge scopeId={ROOT_COMMAND_SCOPE_ID} />
+      )}
       <Sidebar />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {location.pathname === "/editor" && <ProductionBanner />}
@@ -38,11 +44,22 @@ const MainLayoutContent = () => {
             would push the page down without shrinking it, clipping the bottom
             row of the results grid. */}
         <div className="flex-1 min-h-0 min-w-0">
-          {renderedSplit ? (
-            <SplitPaneLayout {...renderedSplit} />
-          ) : (
-            <Outlet />
-          )}
+          <Suspense
+            fallback={
+              <>
+                {location.pathname === "/editor" && (
+                  <CommandPaletteScopeBridge scopeId={ROOT_COMMAND_SCOPE_ID} />
+                )}
+                <LoadingState />
+              </>
+            }
+          >
+            {renderedSplit ? (
+              <SplitPaneLayout {...renderedSplit} />
+            ) : (
+              <Outlet />
+            )}
+          </Suspense>
         </div>
       </main>
       <RightSidebar />
@@ -52,7 +69,10 @@ const MainLayoutContent = () => {
 };
 
 export const MainLayout = () => (
-  <CommandPaletteProvider>
-    <MainLayoutContent />
-  </CommandPaletteProvider>
+  <PluginRegistryProvider>
+    <PluginUpdateToast />
+    <CommandPaletteProvider>
+      <MainLayoutContent />
+    </CommandPaletteProvider>
+  </PluginRegistryProvider>
 );

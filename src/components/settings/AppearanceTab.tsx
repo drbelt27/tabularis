@@ -3,6 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Monitor, Code2 } from "lucide-react";
 import clsx from "clsx";
 import { useSettings } from "../../hooks/useSettings";
+import {
+  EDITOR_FONT_SIZE_DEFAULT,
+  EDITOR_FONT_SIZE_MAX,
+  EDITOR_FONT_SIZE_MIN,
+} from "../../utils/editorFontSize";
 import { useTheme } from "../../hooks/useTheme";
 import {
   DEFAULT_RESULT_FONT_FAMILY,
@@ -19,19 +24,13 @@ import {
 } from "./SettingControls";
 import { FontPicker } from "./FontPicker";
 import { ThemePicker } from "./ThemePicker";
+import { ThemeManager } from "./ThemeManager";
 import { ResultColorsSection } from "./ResultColorsSection";
-import { themeRegistry } from "../../themes/themeRegistry";
 
 export function AppearanceTab() {
   const { t } = useTranslation();
   const { settings, updateSetting } = useSettings();
-  const {
-    currentTheme,
-    allThemes,
-    setTheme,
-    settings: themeSettings,
-    updateSettings,
-  } = useTheme();
+  const { allThemes } = useTheme();
   const [subTab, setSubTab] = useState<"general" | "editor">("general");
 
   return (
@@ -67,60 +66,7 @@ export function AppearanceTab() {
       {/* General sub-tab */}
       {subTab === "general" && (
         <>
-          <SettingSection title={t("settings.themeSelection")}>
-            <SettingRow
-              label={t("settings.themeMode")}
-              description={t("settings.themeModeDesc")}
-            >
-              <SettingButtonGroup
-                value={themeSettings.followSystemTheme ? "system" : "static"}
-                onChange={(mode) =>
-                  updateSettings({ followSystemTheme: mode === "system" })
-                }
-                options={[
-                  { value: "static", label: t("settings.themeModeStatic") },
-                  { value: "system", label: t("settings.themeModeSystem") },
-                ]}
-              />
-            </SettingRow>
-
-            {themeSettings.followSystemTheme ? (
-              <>
-                <div className="py-3">
-                  <p className="text-sm text-muted mb-2">
-                    {t("settings.lightTheme")}
-                  </p>
-                  <ThemePicker
-                    value={themeSettings.lightThemeId}
-                    onChange={(id) => updateSettings({ lightThemeId: id })}
-                    themes={allThemes.filter((theme) =>
-                      themeRegistry.isLightTheme(theme),
-                    )}
-                  />
-                </div>
-                <div className="py-3">
-                  <p className="text-sm text-muted mb-2">
-                    {t("settings.darkTheme")}
-                  </p>
-                  <ThemePicker
-                    value={themeSettings.darkThemeId}
-                    onChange={(id) => updateSettings({ darkThemeId: id })}
-                    themes={allThemes.filter((theme) =>
-                      themeRegistry.isDarkTheme(theme),
-                    )}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="py-3">
-                <ThemePicker
-                  value={currentTheme.id}
-                  onChange={setTheme}
-                  themes={allThemes}
-                />
-              </div>
-            )}
-          </SettingSection>
+          <ThemeManager />
 
           <SettingSection title={t("settings.fontFamily")}>
             <div className="py-3">
@@ -129,7 +75,7 @@ export function AppearanceTab() {
                 onChange={(f) => updateSetting("fontFamily", f)}
                 getPreviewCSS={(name) =>
                   name === "System"
-                    ? "system-ui, -apple-system, sans-serif"
+                    ? "var(--font-base)"
                     : `"${name}", ${name}`
                 }
                 inputId="custom-font-input"
@@ -172,6 +118,34 @@ export function AppearanceTab() {
               <SettingToggle
                 checked={settings.stickyColumnHeaders ?? true}
                 onChange={(v) => updateSetting("stickyColumnHeaders", v)}
+              />
+            </SettingRow>
+            <SettingRow
+              label={t("settings.dataGrid.zebraStripes")}
+              description={t("settings.dataGrid.zebraStripesDesc")}
+            >
+              <SettingToggle
+                checked={settings.resultZebraStripes ?? false}
+                onChange={(v) => updateSetting("resultZebraStripes", v)}
+              />
+            </SettingRow>
+            <SettingRow
+              label={t("settings.dataGrid.defaultSortDirection")}
+              description={t("settings.dataGrid.defaultSortDirectionDesc")}
+            >
+              <SettingButtonGroup
+                value={settings.defaultSortDirection ?? "asc"}
+                onChange={(v) => updateSetting("defaultSortDirection", v)}
+                options={[
+                  {
+                    value: "asc",
+                    label: t("settings.dataGrid.sortAscending"),
+                  },
+                  {
+                    value: "desc",
+                    label: t("settings.dataGrid.sortDescending"),
+                  },
+                ]}
               />
             </SettingRow>
             <div className="py-3">
@@ -230,10 +204,10 @@ export function AppearanceTab() {
           <SettingSection title={t("settings.appearance_editorFontSize")}>
             <SettingRow label={t("settings.appearance_editorFontSize")}>
               <SettingSlider
-                value={settings.editorFontSize ?? 14}
+                value={settings.editorFontSize ?? EDITOR_FONT_SIZE_DEFAULT}
                 onChange={(v) => updateSetting("editorFontSize", v)}
-                min={10}
-                max={20}
+                min={EDITOR_FONT_SIZE_MIN}
+                max={EDITOR_FONT_SIZE_MAX}
                 step={1}
                 formatValue={(v) => `${v}px`}
               />
@@ -278,6 +252,16 @@ export function AppearanceTab() {
             </SettingRow>
 
             <SettingRow
+              label={t("settings.appearance_editorHighlightInvisibleCharacters")}
+              description={t("settings.appearance_editorHighlightInvisibleCharactersDesc")}
+            >
+              <SettingToggle
+                checked={settings.editorHighlightInvisibleCharacters ?? true}
+                onChange={(v) => updateSetting("editorHighlightInvisibleCharacters", v)}
+              />
+            </SettingRow>
+
+            <SettingRow
               label={t("settings.appearance_editorShowLineNumbers")}
               description={t(
                 "settings.appearance_editorShowLineNumbersDesc",
@@ -300,6 +284,27 @@ export function AppearanceTab() {
                 onChange={(v) =>
                   updateSetting("editorAcceptSuggestionOnEnter", v)
                 }
+              />
+            </SettingRow>
+          </SettingSection>
+
+          <SettingSection title={t("settings.autocomplete_title")}>
+            <SettingRow
+              label={t("settings.autocomplete_keywordCase")}
+              description={t("settings.autocomplete_keywordCaseDesc")}
+            >
+              <SettingButtonGroup
+                value={settings.autocompleteKeywordCase ?? "match"}
+                onChange={(v) => updateSetting("autocompleteKeywordCase", v)}
+                options={[
+                  {
+                    value: "match",
+                    label: t("settings.autocomplete_keywordCaseMatch"),
+                  },
+                  { value: "upper", label: "UPPER" },
+                  { value: "lower", label: "lower" },
+                ]}
+                mono
               />
             </SettingRow>
           </SettingSection>
